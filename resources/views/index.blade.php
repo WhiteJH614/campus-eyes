@@ -1,13 +1,13 @@
-<?php
-session_start();
-$pageTitle = 'Campus Eye - Home';
-$user = $_SESSION['user'] ?? ['name' => 'Guest', 'role' => 'reporter'];
-$breadcrumbs = [
-    ['label' => 'Home']
-];
+@extends('layouts.app')
 
-include 'header.php';
-?>
+@php
+    $pageTitle = 'Campus Eye - Home';
+    $breadcrumbs = [
+        ['label' => 'Home'],
+    ];
+@endphp
+
+@section('content')
 <section class="space-y-8">
     <div class="relative overflow-hidden rounded-2xl text-white shadow-lg" style="background:linear-gradient(120deg,#1F4E79,#285F96);">
         <div class="absolute inset-0" style="background:linear-gradient(180deg,rgba(255,255,255,0.08),transparent);"></div>
@@ -91,4 +91,4 @@ include 'header.php';
         </div>
     </div>
 </section>
-<?php include 'footer.php'; ?>
+@endsection

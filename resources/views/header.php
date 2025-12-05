@@ -38,7 +38,6 @@ $links = $roleLinks[$role] ?? $roleLinks['reporter'];
     <meta name="description" content="Campus Eye Maintenance Reporting System">
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
     <link rel="icon" type="image/png" href="/favicon.png">
-    <link rel="stylesheet" href="/css/app.css">
 </head>
 
 <body class="min-h-screen" style="background:#F5F7FA;color:#2C3E50;">
