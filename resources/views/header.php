@@ -12,10 +12,10 @@ $roleLinks = [
         ['label' => 'My Reports', 'url' => '/reports/mine'],
     ],
     'technician' => [
-        ['label' => 'Task Dashboard', 'url' => '/CampusEyes/views/Technician/dashboard.php'],
-        ['label' => 'Assigned Tasks', 'url' => '/CampusEyes/views/Technician/tasks.php'],
-        ['label' => 'Completed Tasks', 'url' => '/CampusEyes/views/Technician/completed.php'],
-        ['label' => 'Profile', 'url' => '/CampusEyes/views/Technician/profile.php'],
+        ['label' => 'Task Dashboard', 'url' => '/tech/dashboard'],
+        ['label' => 'Assigned Tasks', 'url' => '/tech/tasks'],
+        ['label' => 'Completed Tasks', 'url' => '/tech/tasks/completed'],
+        ['label' => 'Profile', 'url' => '/tech/profile'],
     ],
     'admin' => [
         ['label' => 'Admin Dashboard', 'url' => '/admin/dashboard'],

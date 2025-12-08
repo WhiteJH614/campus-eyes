@@ -12,10 +12,10 @@
             ['label' => 'My Reports', 'url' => '/reports/mine'],
         ],
         'technician' => [
-            ['label' => 'Task Dashboard', 'url' => '/CampusEyes/views/Technician/dashboard.php'],
-            ['label' => 'Assigned Tasks', 'url' => '/CampusEyes/views/Technician/tasks.php'],
-            ['label' => 'Completed Tasks', 'url' => '/CampusEyes/views/Technician/completed.php'],
-            ['label' => 'Profile', 'url' => '/CampusEyes/views/Technician/profile.php'],
+            ['label' => 'Task Dashboard', 'url' => '/tech/dashboard'],
+            ['label' => 'Assigned Tasks', 'url' => '/tech/tasks'],
+            ['label' => 'Completed Tasks', 'url' => '/tech/tasks/completed'],
+            ['label' => 'Profile', 'url' => '/tech/profile'],
         ],
         'admin' => [
             ['label' => 'Admin Dashboard', 'url' => '/admin/dashboard'],
@@ -38,7 +38,8 @@
     <meta name="description" content="Campus Eye Maintenance Reporting System">
     <title>{{ $pageTitle }}</title>
     <link rel="icon" type="image/png" href="/favicon.png">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="https://cdn.tailwindcss.com"></script>
+
 </head>
 
 <body class="min-h-screen" style="background:#F5F7FA;color:#2C3E50;">
