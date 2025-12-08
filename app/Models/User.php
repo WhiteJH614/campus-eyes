@@ -6,6 +6,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable
 {
@@ -44,5 +46,30 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function reporterProfile(): HasOne
+    {
+        return $this->hasOne(Reporter::class);
+    }
+
+    public function technicianProfile(): HasOne
+    {
+        return $this->hasOne(Technician::class);
+    }
+
+    public function adminProfile(): HasOne
+    {
+        return $this->hasOne(Admin::class);
+    }
+
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class, 'reporter_id');
+    }
+
+    public function assignedReports(): HasMany
+    {
+        return $this->hasMany(Report::class, 'technician_id');
     }
 }
