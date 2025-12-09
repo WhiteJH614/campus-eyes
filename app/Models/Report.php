@@ -14,32 +14,32 @@ class Report extends Model
     protected $fillable = [
         'reporter_id',
         'technician_id',
-        'category_id',
         'room_id',
-        'title',
+        'category_id',
         'description',
-        'urgency',
-        'status',
-        'reported_at',
-        'assigned_at',
+        'urgency',          // Low / Medium / High
+        'status',           // Pending / Assigned / In_Progress / Completed
+        'resolution_notes', // 技术员填写的处理说明
+        'due_at',
         'completed_at',
-        'reassigned_at',
     ];
 
     protected $casts = [
-        'reported_at' => 'datetime',
-        'assigned_at' => 'datetime',
+        'due_at' => 'datetime',
         'completed_at' => 'datetime',
-        'reassigned_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function reporter(): BelongsTo
     {
+        // users.id -> reports.reporter_id
         return $this->belongsTo(User::class, 'reporter_id');
     }
 
     public function technician(): BelongsTo
     {
+        // users.id -> reports.technician_id
         return $this->belongsTo(User::class, 'technician_id');
     }
 
@@ -55,6 +55,7 @@ class Report extends Model
 
     public function attachments(): HasMany
     {
-        return $this->hasMany(Attachment::class);
+        return $this->hasMany(Attachment::class, 'report_id');
     }
+    
 }

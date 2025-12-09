@@ -1,8 +1,16 @@
 @php
+    use Illuminate\Support\Str;
+
     $pageTitle = $pageTitle ?? 'Campus Eye Maintenance Reporting System';
-    $user = $user ?? (session('user') ?? []);
-    $name = $user['name'] ?? 'Guest';
-    $role = strtolower($user['role'] ?? 'reporter');
+
+    // Use Laravel auth user instead of manual session
+    $authUser = auth()->user();
+
+    $name = $authUser?->full_name ?? 'Guest';
+    // In DB: 'Reporter', 'Technician', 'Admin'
+    $rawRole = $authUser?->role ?? null;
+    $role = $rawRole ? strtolower($rawRole) : ''; // reporter / technician / admin / ''
+
     $breadcrumbs = $breadcrumbs ?? [];
 
     $roleLinks = [
@@ -12,10 +20,10 @@
             ['label' => 'My Reports', 'url' => '/reports/mine'],
         ],
         'technician' => [
-            ['label' => 'Task Dashboard', 'url' => '/tech/dashboard'],
-            ['label' => 'Assigned Tasks', 'url' => '/tech/tasks'],
-            ['label' => 'Completed Tasks', 'url' => '/tech/tasks/completed'],
-            ['label' => 'Profile', 'url' => '/tech/profile'],
+            ['label' => 'Task Dashboard', 'url' => '/technician/dashboard'],
+            ['label' => 'Assigned Jobs', 'url' => '/technician/jobs'],
+            ['label' => 'Completed Jobs', 'url' => '/technician/jobs?filter=completed'],
+            ['label' => 'Profile', 'url' => '/profile'],
         ],
         'admin' => [
             ['label' => 'Admin Dashboard', 'url' => '/admin/dashboard'],
@@ -27,7 +35,19 @@
         ],
     ];
 
-    $links = $roleLinks[$role] ?? $roleLinks['reporter'];
+    // Menu for guests (not logged in)
+    $guestLinks = [
+        ['label' => 'Home', 'url' => '/'],
+        ['label' => 'Login', 'url' => route('login')],
+        ['label' => 'Register', 'url' => route('register')],
+    ];
+
+    // Decide which links to show in the main nav
+    if ($authUser && isset($roleLinks[$role])) {
+        $links = $roleLinks[$role];
+    } else {
+        $links = $guestLinks;
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -39,26 +59,33 @@
     <title>{{ $pageTitle }}</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
-
 </head>
 
 <body class="min-h-screen" style="background:#F5F7FA;color:#2C3E50;">
     <a href="#main-content"
-        class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 bg-white text-slate-900 px-3 py-2 rounded shadow">Skip
-        to content</a>
+        class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 bg-white text-slate-900 px-3 py-2 rounded shadow">
+        Skip to content
+    </a>
+
     <header class="sticky top-0 z-30 border-b"
         style="backdrop-filter:blur(10px);background:rgba(255,255,255,0.9);border-color:#D7DDE5;">
         <div class="text-white" style="background:linear-gradient(90deg,#1F4E79,#285F96);">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3">
                 <div class="h-10 w-10 rounded-full flex items-center justify-center font-semibold"
-                    style="background:rgba(255,255,255,0.18);color:white;">CE</div>
+                    style="background:rgba(255,255,255,0.18);color:white;">
+                    CE
+                </div>
                 <div>
-                    <div class="text-lg font-semibold">Campus Eye Maintenance Reporting System</div>
-                    <div class="text-sm" style="color:rgba(255,255,255,0.85);">Friendly, fast reporting for campus
-                        facilities</div>
+                    <div class="text-lg font-semibold">
+                        Campus Eye Maintenance Reporting System
+                    </div>
+                    <div class="text-sm" style="color:rgba(255,255,255,0.85);">
+                        Friendly, fast reporting for campus facilities
+                    </div>
                 </div>
             </div>
         </div>
+
         <nav class="mx-auto px-4 sm:px-6 lg:px-8" style="background:#1F4E79;color:white;">
             <div class="flex items-center justify-between h-14">
                 <div class="flex items-center gap-3">
@@ -70,6 +97,7 @@
                                 d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
                     </button>
+
                     <div class="hidden sm:flex items-center gap-4">
                         @foreach ($links as $link)
                             <a href="{{ $link['url'] }}"
@@ -80,18 +108,35 @@
                         @endforeach
                     </div>
                 </div>
+
                 <div class="flex items-center gap-4">
-                    <div class="text-sm hidden sm:block" style="color:rgba(255,255,255,0.85);">
-                        <span class="font-semibold" style="color:white;">{{ $name }}</span>
-                        <span style="color:rgba(255,255,255,0.7);">({{ ucfirst($role) }})</span>
-                    </div>
-                    <div class="hidden sm:flex items-center gap-3 text-sm">
-                        <a href="/profile" class="hover:underline" style="color:#1ABC9C;">Profile</a>
-                        <a href="/change-password" class="hover:underline" style="color:#1ABC9C;">Change Password</a>
-                        <a href="/logout" class="hover:underline" style="color:rgba(255,255,255,0.85);">Logout</a>
-                    </div>
+                    @auth
+                        <div class="text-sm hidden sm:block" style="color:rgba(255,255,255,0.85);">
+                            <span class="font-semibold" style="color:white;">{{ $name }}</span>
+                            <span style="color:rgba(255,255,255,0.7);">
+                                ({{ $rawRole ?? 'User' }})
+                            </span>
+                        </div>
+                        <div class="hidden sm:flex items-center gap-3 text-sm">
+                            <a href="/profile" class="hover:underline" style="color:#1ABC9C;">Profile</a>
+                            <a href="/change-password" class="hover:underline" style="color:#1ABC9C;">Change Password</a>
+                            {{-- If your logout route is POST, wrap in a form instead --}}
+                        <form method="POST" action="{{ route('logout') }}" class="inline">
+                            @csrf
+                            <button type="submit" class="hover:underline" style="color:rgba(255,255,255,0.85);">Logout</button>
+                        </form>
+                        </div>
+                    @endauth
+
+                    @guest
+                        <div class="hidden sm:flex items-center gap-3 text-sm">
+                            <a href="{{ route('login') }}" class="hover:underline" style="color:#1ABC9C;">Login</a>
+                            <a href="{{ route('register') }}" class="hover:underline" style="color:#1ABC9C;">Register</a>
+                        </div>
+                    @endguest
                 </div>
             </div>
+
             <div class="sm:hidden" id="mobileNav" hidden>
                 <div class="pt-2 pb-3 space-y-1">
                     @foreach ($links as $link)
@@ -100,19 +145,44 @@
                             {{ $link['label'] }}
                         </a>
                     @endforeach
-                    <div class="border-t pt-2 mt-2 space-y-1 text-sm" style="border-color:rgba(255,255,255,0.2);">
-                        <div class="px-3" style="color:rgba(255,255,255,0.7);">Signed in as</div>
-                        <div class="px-3 font-semibold" style="color:white;">{{ $name }} ({{ ucfirst($role) }})</div>
-                        <a href="/profile" class="block px-3 py-2 rounded-md hover:bg-white/10"
-                            style="color:#1ABC9C;">Profile</a>
-                        <a href="/change-password" class="block px-3 py-2 rounded-md hover:bg-white/10"
-                            style="color:#1ABC9C;">Change Password</a>
-                        <a href="/logout" class="block px-3 py-2 rounded-md hover:bg-white/10"
-                            style="color:rgba(255,255,255,0.85);">Logout</a>
-                    </div>
+
+                    @auth
+                        <div class="border-t pt-2 mt-2 space-y-1 text-sm" style="border-color:rgba(255,255,255,0.2);">
+                            <div class="px-3" style="color:rgba(255,255,255,0.7);">
+                                Signed in as
+                            </div>
+                            <div class="px-3 font-semibold" style="color:white;">
+                                {{ $name }} ({{ $rawRole ?? 'User' }})
+                            </div>
+                            <a href="/profile" class="block px-3 py-2 rounded-md hover:bg-white/10"
+                                style="color:#1ABC9C;">Profile</a>
+                            <a href="/change-password" class="block px-3 py-2 rounded-md hover:bg-white/10"
+                                style="color:#1ABC9C;">Change Password</a>
+                        <form method="POST" action="{{ route('logout') }}" class="block">
+                            @csrf
+                            <button type="submit" class="w-full text-left px-3 py-2 rounded-md hover:bg-white/10" style="color:rgba(255,255,255,0.85);">
+                                Logout
+                            </button>
+                        </form>
+                        </div>
+                    @endauth
+
+                    @guest
+                        <div class="border-t pt-2 mt-2 space-y-1 text-sm" style="border-color:rgba(255,255,255,0.2);">
+                            <a href="{{ route('login') }}" class="block px-3 py-2 rounded-md hover:bg-white/10"
+                                style="color:#1ABC9C;">
+                                Login
+                            </a>
+                            <a href="{{ route('register') }}" class="block px-3 py-2 rounded-md hover:bg-white/10"
+                                style="color:#1ABC9C;">
+                                Register
+                            </a>
+                        </div>
+                    @endguest
                 </div>
             </div>
         </nav>
+
         @if (!empty($breadcrumbs))
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3" style="background:#F5F7FA;">
                 <nav class="text-sm" aria-label="Breadcrumb" style="color:#7F8C8D;">
@@ -124,7 +194,9 @@
                                         {{ $crumb['label'] }}
                                     </a>
                                 @else
-                                    <span class="font-semibold" style="color:#2C3E50;">{{ $crumb['label'] }}</span>
+                                    <span class="font-semibold" style="color:#2C3E50;">
+                                        {{ $crumb['label'] }}
+                                    </span>
                                 @endif
                                 @if ($index < count($breadcrumbs) - 1)
                                     <span style="color:#D7DDE5;">/</span>
@@ -136,25 +208,44 @@
             </div>
         @endif
     </header>
+
     <main id="main-content" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         @yield('content')
     </main>
+
     <footer class="mt-10" style="background:linear-gradient(120deg,#1F4E79,#285F96);color:#FFFFFF;">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
                 <div class="space-y-2">
-                    <div class="text-lg font-semibold">Campus Eye Maintenance Reporting System</div>
-                    <p class="text-sm max-w-xl" style="color:rgba(255,255,255,0.85);">Designed to keep campus facilities safe, with clear reporting, tracking, and resolution for everyone.</p>
-                    <div class="text-sm" style="color:rgba(255,255,255,0.8);">&copy; 2025 TAR UMT. All rights reserved.</div>
+                    <div class="text-lg font-semibold">
+                        Campus Eye Maintenance Reporting System
+                    </div>
+                    <p class="text-sm max-w-xl" style="color:rgba(255,255,255,0.85);">
+                        Designed to keep campus facilities safe, with clear reporting, tracking, and resolution for
+                        everyone.
+                    </p>
+                    <div class="text-sm" style="color:rgba(255,255,255,0.8);">
+                        &copy; 2025 TAR UMT. All rights reserved.
+                    </div>
                 </div>
                 <div class="flex flex-wrap gap-3 text-sm">
-                    <a href="/help" class="px-4 py-2 rounded-full border" style="border-color:rgba(255,255,255,0.35);color:white;">Help / FAQ</a>
-                    <a href="/support" class="px-4 py-2 rounded-full border" style="border-color:rgba(255,255,255,0.35);color:white;">Contact Support</a>
-                    <a href="/privacy" class="px-4 py-2 rounded-full border" style="border-color:rgba(255,255,255,0.35);color:white;">Privacy</a>
+                    <a href="/help" class="px-4 py-2 rounded-full border"
+                        style="border-color:rgba(255,255,255,0.35);color:white;">
+                        Help / FAQ
+                    </a>
+                    <a href="/support" class="px-4 py-2 rounded-full border"
+                        style="border-color:rgba(255,255,255,0.35);color:white;">
+                        Contact Support
+                    </a>
+                    <a href="/privacy" class="px-4 py-2 rounded-full border"
+                        style="border-color:rgba(255,255,255,0.35);color:white;">
+                        Privacy
+                    </a>
                 </div>
             </div>
         </div>
     </footer>
+
     <script>
         (() => {
             const toggle = document.getElementById('navToggle');

@@ -19,11 +19,11 @@ class Room extends Model
 
     public function block(): BelongsTo
     {
-        return $this->belongsTo(Block::class);
+        return $this->belongsTo(Block::class, 'block_id');
     }
 
     public function reports(): HasMany
     {
-        return $this->hasMany(Report::class);
+        return $this->hasMany(Report::class, 'room_id');
     }
 }

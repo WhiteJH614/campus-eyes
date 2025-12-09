@@ -12,11 +12,10 @@ class Attachment extends Model
 
     protected $fillable = [
         'report_id',
+        'file_name',
         'file_path',
         'file_type',
-        'file_size',
-        'uploaded_by',
-        'uploaded_at',
+        'attachment_type', // REPORTER_PROOF / TECHNICIAN_PROOF
     ];
 
     protected $casts = [

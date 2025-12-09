@@ -17,6 +17,7 @@
                 <p class="text-sm" style="color:#7F8C8D;">Update your contact details, preferences, and notifications.</p>
             </div>
             <form action="/tech/profile" method="post" class="space-y-4">
+                @csrf
                 <div class="grid sm:grid-cols-2 gap-4">
                     <div class="space-y-2">
                         <label for="name" class="text-sm font-medium" style="color:#2C3E50;">Full Name</label>
@@ -82,6 +83,7 @@
         <div class="rounded-2xl shadow-sm border p-6" style="background:#FFFFFF;border-color:#D7DDE5;">
             <h2 class="text-lg font-semibold mb-3" style="color:#2C3E50;">Change password</h2>
             <form action="/tech/profile/password" method="post" class="space-y-4">
+                @csrf
                 <div class="space-y-2">
                     <label for="current_password" class="text-sm font-medium" style="color:#2C3E50;">Current Password</label>
                     <input id="current_password" name="current_password" type="password" class="w-full rounded-lg px-3 py-2 border" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;" />

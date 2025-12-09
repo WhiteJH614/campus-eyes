@@ -94,6 +94,7 @@
         <div class="rounded-2xl shadow-sm border p-6" style="background:#FFFFFF;border-color:#D7DDE5;">
             <h2 class="text-lg font-semibold mb-3" style="color:#2C3E50;">Status & time tracking</h2>
             <form action="/tech/tasks/{{ urlencode($task['id']) }}/status" method="post" class="space-y-4">
+                @csrf
                 <div class="grid sm:grid-cols-2 gap-4">
                     <div class="space-y-2">
                         <label class="text-sm font-medium" style="color:#2C3E50;">Next status</label>

@@ -11,6 +11,7 @@ class Block extends Model
 {
     use HasFactory;
 
+    // 使用默认主键 id，不需要写 primaryKey
     protected $fillable = [
         'campus_id',
         'block_name',
@@ -18,11 +19,11 @@ class Block extends Model
 
     public function campus(): BelongsTo
     {
-        return $this->belongsTo(Campus::class);
+        return $this->belongsTo(Campus::class, 'campus_id');
     }
 
     public function rooms(): HasMany
     {
-        return $this->hasMany(Room::class);
+        return $this->hasMany(Room::class, 'block_id');
     }
 }
