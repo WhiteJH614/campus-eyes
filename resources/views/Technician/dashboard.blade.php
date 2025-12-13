@@ -102,8 +102,9 @@ $breadcrumbs = [
                 <ul class="space-y-3 text-sm text-[#2C3E50]">
                     @forelse ($recent as $item)
                         <li class="rounded-lg px-3 py-2 bg-[#F5F7FA]">
-                            {{ $item }}
+                            <span class="whitespace-pre-line">{{ $item }}</span>
                         </li>
+
                     @empty
                         <li class="text-sm text-[#7F8C8D]">
                             No recent activity yet.

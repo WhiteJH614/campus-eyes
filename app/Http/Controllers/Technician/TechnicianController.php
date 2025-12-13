@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Report;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Models\Attachment;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
@@ -14,9 +15,6 @@ class TechnicianController extends Controller
 
     public function dashboard()
     {
-
-
-
         $user = Auth::user();
 
         // Safety: only technicians should see this page
@@ -31,7 +29,7 @@ class TechnicianController extends Controller
 
         // Assigned = Pending + Assigned for this technician
         $assignedCount = Report::where('technician_id', $technicianId)
-            ->whereIn('status', ['Pending', 'Assigned'])
+            ->whereIn('status', ['Assigned'])
             ->count();
 
         // In Progress
@@ -79,11 +77,11 @@ class TechnicianController extends Controller
             $updatedAt = $report->updated_at?->format('d M Y H:i');
 
             return match ($status) {
-                'Completed' => "Report #{$id} marked as Completed ({$updatedAt})",
-                'In_Progress' => "Report #{$id} status changed to In Progress ({$updatedAt})",
-                'Assigned' => "Report #{$id} assigned to you ({$updatedAt})",
-                'Pending' => "Report #{$id} is pending assignment ({$updatedAt})",
-                default => "Report #{$id} updated ({$updatedAt})",
+                'Completed' => "Report {$id} \nmarked as Completed ({$updatedAt})",
+                'In_Progress' => "Report {$id} \nstatus changed to In Progress ({$updatedAt})",
+                'Assigned' => "Report {$id} \nassigned to you ({$updatedAt})",
+                'Pending' => "Report {$id} \nis pending assignment ({$updatedAt})",
+                default => "Report {$id} \nupdated ({$updatedAt})",
             };
         })->toArray();
 
@@ -104,17 +102,52 @@ class TechnicianController extends Controller
     /**
      * List jobs assigned to the authenticated technician.
      */
-    public function myJobs()
+    public function myJobs(Request $request)
     {
         /** @var User $technician */
         $technician = Auth::user();
 
-        $jobs = $technician->assignedReports()
+        // base query: only this technician + only “active” statuses
+        $query = $technician->assignedReports()
             ->with(['room.block', 'category'])
-            ->orderBy('urgency', 'desc')
-            ->get();
+            ->whereIn('status', ['Assigned', 'In_Progress']);
 
-        return view('technician.tasks', compact('jobs'));
+        // simple search by ID
+        if ($request->filled('q')) {
+            $q = trim($request->q);
+            $query->where('id', 'like', "%{$q}%");
+        }
+
+        // filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // filter by urgency
+        if ($request->filled('urgency')) {
+            $query->where('urgency', $request->urgency);
+        }
+
+        // sort options
+        switch ($request->get('sort')) {
+            case 'due':
+                $query->orderBy('due_at')->orderByDesc('created_at');
+                break;
+            case 'urgency':
+                // High > Medium > Low
+                $query->orderByRaw("FIELD(urgency, 'High', 'Medium', 'Low')");
+                break;
+            default:
+                // latest reported first
+                $query->orderByDesc('created_at');
+        }
+
+        $jobs = $query->paginate(10)->withQueryString();
+
+        return view('technician.tasks', [
+            'jobs' => $jobs,
+            'filters' => $request->only(['q', 'status', 'urgency', 'sort']),
+        ]);
     }
 
     /**
@@ -122,11 +155,13 @@ class TechnicianController extends Controller
      */
     public function jobDetails($id)
     {
-        $job = Report::with(['room.block', 'category', 'attachments'])
+        $task = Report::with(['room.block.campus', 'category', 'attachments'])
             ->where('technician_id', Auth::id())
             ->findOrFail($id);
 
-        return view('technician.job_details', compact('job'));
+        print_r($task->toArray());
+
+        return view('technician.task-detail', ['job' => $task]);
     }
 
     /**
@@ -137,7 +172,7 @@ class TechnicianController extends Controller
         $job = Report::where('technician_id', Auth::id())->findOrFail($id);
 
         $request->validate([
-            'status' => 'required|in:Assigned,In_Progress,Completed',
+            'status' => 'required|in:Assigned,In_Progress,Completed,Escalated',
         ]);
 
         $job->update([
@@ -146,6 +181,7 @@ class TechnicianController extends Controller
 
         return back()->with('success', 'Task status updated');
     }
+
 
     /**
      * Mark a job as completed with resolution notes.
@@ -156,15 +192,31 @@ class TechnicianController extends Controller
 
         $request->validate([
             'resolution_notes' => 'required|string|max:1000',
+            'proof_image' => 'required|image|max:2048', // 2MB, adjust if needed
         ]);
 
+        // 1) Update report status
         $job->update([
             'status' => 'Completed',
             'resolution_notes' => $request->resolution_notes,
             'completed_at' => now(),
         ]);
 
+        // 2) Store file
+        $file = $request->file('proof_image');
+        $path = $file->store('attachments/technician', 'public');
+
+        Attachment::create([
+            'report_id' => $job->id,
+            'file_name' => $file->getClientOriginalName(),
+            'file_path' => $path,
+            'file_type' => $file->getClientMimeType(),
+            'attachment_type' => 'TECHNICIAN_PROOF',
+            'uploaded_at' => now(),
+        ]);
+
         return redirect()->route('technician.my_jobs')
-            ->with('success', 'Job marked as completed');
+            ->with('success', 'Job marked as completed with proof uploaded.');
     }
+
 }

@@ -80,24 +80,6 @@ Route::middleware('auth')->group(function () {
 // ===================================================================================================
 use App\Http\Controllers\Technician\TechnicianController;
 
-Route::prefix('technician')->middleware('auth')->group(function () {
-
-    // Technician dashboard
-    Route::get('/dashboard', [TechnicianController::class, 'dashboard'])
-        ->name('technician.dashboard');
-
-    Route::get('/jobs', [TechnicianController::class, 'myJobs'])
-        ->name('technician.my_jobs');
-
-    Route::get('/jobs/{id}', [TechnicianController::class, 'jobDetails'])
-        ->name('technician.job_details');
-
-    Route::post('/jobs/{id}/update-status', [TechnicianController::class, 'updateStatus'])
-        ->name('technician.update_status');
-
-    Route::post('/jobs/{id}/complete', [TechnicianController::class, 'completeJob'])
-        ->name('technician.complete_job');
-});
 
 
 
@@ -113,4 +95,13 @@ Route::get('/db-test', function () {
     } catch (\Exception $e) {
         return 'DB ERROR: ' . $e->getMessage();
     }
+});
+
+
+Route::middleware(['auth', 'role:Technician'])->prefix('technician')->name('technician.')->group(function () {
+    Route::get('/dashboard', [TechnicianController::class, 'dashboard'])->name('dashboard');
+    Route::get('/jobs', [TechnicianController::class, 'myJobs'])->name('my_jobs');
+    Route::get('/jobs/{id}', [TechnicianController::class, 'jobDetails'])->name('job_details');
+    Route::post('/jobs/{id}/status', [TechnicianController::class, 'updateStatus'])->name('job_status');
+    Route::post('/jobs/{id}/complete', [TechnicianController::class, 'completeJob'])->name('job_complete');
 });
