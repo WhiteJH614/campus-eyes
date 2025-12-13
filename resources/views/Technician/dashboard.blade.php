@@ -1,11 +1,11 @@
 @extends('layouts.app')
 
 @php
-$pageTitle = 'Technician Dashboard';
-$breadcrumbs = [
-    ['label' => 'Home', 'url' => '/'],
-    ['label' => 'Technician Dashboard'],
-];
+    $pageTitle = 'Technician Dashboard';
+    $breadcrumbs = [
+        ['label' => 'Home', 'url' => '/'],
+        ['label' => 'Technician Dashboard'],
+    ];
 @endphp
 
 @section('content')
@@ -43,7 +43,7 @@ $breadcrumbs = [
             {{-- Stats cards --}}
             <div class="grid gap-4 sm:grid-cols-4 mt-6">
                 @foreach ($stats as $stat)
-                <div class="rounded-xl p-4 text-white {{ $stat['bg_class'] }}">
+                    <div class="rounded-xl p-4 text-white {{ $stat['bg_class'] }}">
                         <div class="text-sm" style="color:rgba(255,255,255,0.8);">
                             {{ $stat['label'] }}
                         </div>

@@ -38,8 +38,8 @@
     // Menu for guests (not logged in)
     $guestLinks = [
         ['label' => 'Home', 'url' => '/'],
-        ['label' => 'Login', 'url' => route('login')],
-        ['label' => 'Register', 'url' => route('register')],
+        // ['label' => 'Login', 'url' => route('login')],
+        // ['label' => 'Register', 'url' => route('register')],
     ];
 
     // Decide which links to show in the main nav
@@ -58,14 +58,14 @@
     <meta name="description" content="Campus Eye Maintenance Reporting System">
     <title>{{ $pageTitle }}</title>
     <link rel="icon" type="image/png" href="/favicon.png">
-    <script src="https://cdn.tailwindcss.com"></script>
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
 <body class="min-h-screen" style="background:#F5F7FA;color:#2C3E50;">
-    <a href="#main-content"
+    <!-- <a href="#main-content"
         class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 bg-white text-slate-900 px-3 py-2 rounded shadow">
         Skip to content
-    </a>
+    </a> -->
 
     <header class="sticky top-0 z-30 border-b"
         style="backdrop-filter:blur(10px);background:rgba(255,255,255,0.9);border-color:#D7DDE5;">
@@ -121,17 +121,20 @@
                             <a href="/profile" class="hover:underline" style="color:#1ABC9C;">Profile</a>
                             <a href="/change-password" class="hover:underline" style="color:#1ABC9C;">Change Password</a>
                             {{-- If your logout route is POST, wrap in a form instead --}}
-                        <form method="POST" action="{{ route('logout') }}" class="inline">
-                            @csrf
-                            <button type="submit" class="hover:underline" style="color:rgba(255,255,255,0.85);">Logout</button>
-                        </form>
+                            <form method="POST" action="{{ route('logout') }}" class="inline">
+                                @csrf
+                                <button type="submit" class="hover:underline"
+                                    style="color:rgba(255,255,255,0.85);">Logout</button>
+                            </form>
                         </div>
                     @endauth
 
                     @guest
-                        <div class="hidden sm:flex items-center gap-3 text-sm">
-                            <a href="{{ route('login') }}" class="hover:underline" style="color:#1ABC9C;">Login</a>
-                            <a href="{{ route('register') }}" class="hover:underline" style="color:#1ABC9C;">Register</a>
+                        <div class="hidden sm:flex items-center gap-3 text-sm text-white">
+                            <a href="{{ route('login') }}"
+                                class="text-sm font-medium px-1 py-2 border-b-2 border-transparent hover:border-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2">Login</a>
+                            <a href="{{ route('register') }}"
+                                class="text-sm font-medium px-1 py-2 border-b-2 border-transparent hover:border-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2">Register</a>
                         </div>
                     @endguest
                 </div>
@@ -158,12 +161,13 @@
                                 style="color:#1ABC9C;">Profile</a>
                             <a href="/change-password" class="block px-3 py-2 rounded-md hover:bg-white/10"
                                 style="color:#1ABC9C;">Change Password</a>
-                        <form method="POST" action="{{ route('logout') }}" class="block">
-                            @csrf
-                            <button type="submit" class="w-full text-left px-3 py-2 rounded-md hover:bg-white/10" style="color:rgba(255,255,255,0.85);">
-                                Logout
-                            </button>
-                        </form>
+                            <form method="POST" action="{{ route('logout') }}" class="block">
+                                @csrf
+                                <button type="submit" class="w-full text-left px-3 py-2 rounded-md hover:bg-white/10"
+                                    style="color:rgba(255,255,255,0.85);">
+                                    Logout
+                                </button>
+                            </form>
                         </div>
                     @endauth
 
