@@ -1,21 +1,20 @@
 <?php
 
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('index');
+    return view('welcome');
 });
 
-Route::view('/login', 'Authentication.login');
-Route::view('/register', 'Authentication.register');
-Route::view('/forgot-password', 'Authentication.forgot-password');
-Route::view('/reset-password', 'Authentication.reset-password');
-Route::view('/dashboard', 'Authentication.dashboard-redirect');
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::prefix('tech')->group(function () {
-    Route::view('/dashboard', 'Technician.dashboard');
-    Route::view('/tasks', 'Technician.tasks');
-    Route::view('/tasks/completed', 'Technician.completed');
-    Route::view('/tasks/{id}', 'Technician.task-detail');
-    Route::view('/profile', 'Technician.profile');
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+require __DIR__.'/auth.php';
