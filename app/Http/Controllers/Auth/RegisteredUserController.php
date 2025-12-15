@@ -39,6 +39,8 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            // Default new sign-ups to Reporter role; other roles can be assigned by admins later.
+            'role' => 'Reporter',
         ]);
 
         event(new Registered($user));
