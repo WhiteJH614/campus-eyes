@@ -18,6 +18,7 @@
                 <p class="text-sm" style="color:#7F8C8D;">Enter your new password and confirm to finish resetting.</p>
             </div>
             <form action="/reset-password" method="post" class="space-y-4">
+                @csrf
                 <input type="hidden" name="token" value="{{ $token }}">
                 <div class="space-y-2">
                     <label for="email" class="text-sm font-medium" style="color:#2C3E50;">Email</label>

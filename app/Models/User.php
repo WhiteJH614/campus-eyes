@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -18,9 +18,16 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'full_name',            // 对应 users.full_name
         'email',
-        'password',
+        'password',             // 建议数据库里也用 password 这个字段名
+        'phone_number',
+        'role',                 // Reporter / Technician / Admin
+        'reporter_role',        // Student / Staff （只对 Reporter 有意义）
+        'campus',
+        'specialization',       // Technician 用
+        'availability_status',  // Technician 用：Available / Busy / On_Leave
+        'admin_level',          // Admin 用：Supervisor 等
     ];
 
     /**
@@ -45,4 +52,22 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    /**
+     * Reports created by this user as Reporter.
+     */
+    public function reports(): HasMany
+    {
+        // users.id -> reports.reporter_id
+        return $this->hasMany(Report::class, 'reporter_id');
+    }
+
+    /**
+     * Reports assigned to this user as Technician.
+     */
+    public function assignedReports(): HasMany
+    {
+        return $this->hasMany(Report::class, 'technician_id');
+    }
+    
 }

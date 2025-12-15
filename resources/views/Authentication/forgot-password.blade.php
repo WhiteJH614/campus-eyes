@@ -17,6 +17,7 @@
                 <p class="text-sm" style="color:#7F8C8D;">Enter the email associated with your account and we will send a reset link.</p>
             </div>
             <form action="/forgot-password" method="post" class="space-y-4">
+                @csrf
                 <div class="space-y-2">
                     <label for="email" class="text-sm font-medium" style="color:#2C3E50;">Email</label>
                     <input id="email" name="email" type="email" required class="w-full rounded-lg px-3 py-2 border focus:outline-none" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;" />
