@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TARUMT Penang 3D Prototype</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        /* 1. Base Setup */
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; background-color: #dcecfb; }
+        
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        /* 2. Floating Glass Panel */
+        #ui-panel {
+            position: absolute;
+            top: 20px; left: 20px;
+            width: 320px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            z-index: 100; /* Stays on top of 3D */
+            transition: transform 0.3s ease;
+        }
+        
+        #ui-panel:hover { transform: translateY(-2px); }
+
+        /* 3. Form Styling */
+        .header h3 { margin: 0 0 5px 0; color: #2c3e50; }
+        .header p { margin: 0 0 20px 0; font-size: 0.9rem; color: #7f8c8d; }
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 0.8rem; font-weight: bold; color: #34495e; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        input, textarea {
+            width: 100%; padding: 10px;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            background: #f9f9f9;
+            font-size: 0.9rem;
+            box-sizing: border-box; 
+            transition: border-color 0.2s;
+        }
+        
+        input:focus, textarea:focus { outline: none; border-color: #3498db; background: #fff; }
+        input[readonly] { background-color: #e8f6f3; color: #16a085; font-weight: bold; cursor: not-allowed; }
+
+        .submit-btn {
+            width: 100%; padding: 12px;
+            background: #2980b9; color: white;
+            border: none; border-radius: 8px;
+            font-weight: bold; cursor: pointer;
+            transition: background 0.2s;
+        }
+        .submit-btn:hover { background: #3498db; }
+
+        #status { margin-top: 10px; font-size: 0.8rem; text-align: center; color: #bdc3c7; }
+    </style>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <div id="ui-panel">
+        <div class="header">
+            <h3>📍 Campus Reporter</h3>
+            <p>Click a building to report an issue</p>
+        </div>
+
+        <form id="reportForm">
+            <div class="form-group">
+                <label>Selected Location</label>
+                <input type="text" id="locationInput" placeholder="Select from map..." readonly>
+            </div>
+
+            <div class="form-group">
+                <label>Issue Description</label>
+                <textarea placeholder="e.g. Aircond leaking in Room 201..."></textarea>
+            </div>
+
+            <button type="button" class="submit-btn" onclick="alert('Ready to connect to Laravel!')">
+                Submit Report 🚀
+            </button>
+        </form>
+        
+        <div id="status">Loading Map...</div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        // --- 1. SETUP SCENE ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // Sky Blue
+        // Fog starts at 200m away and becomes solid white at 500m
+        scene.fog = new THREE.Fog(0x87CEEB, 200, 500);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 150, -180);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // --- 2. LIGHTING (UPGRADED) ---
+        // Hemisphere Light: Simulates Sky (Blue) + Ground (Greenish) bounce light
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+        hemiLight.position.set(0, 200, 0);
+        scene.add(hemiLight);
+
+        // Directional Light: The Sun (Warm)
+        const sunLight = new THREE.DirectionalLight(0xffdfba, 1); // Warm Sunlight color
+        sunLight.position.set(50, 100, 50);
+        sunLight.castShadow = true;
+
+        // Shadow quality settings (Sharp shadows look like games, Soft look realistic)
+        sunLight.shadow.mapSize.width = 2048; 
+        sunLight.shadow.mapSize.height = 2048;
+        scene.add(sunLight);
+
+        // --- ADD GROUND PLANE ---
+        // 1. Create the geometry (A big flat square, 500x500 meters)
+        const groundGeometry = new THREE.PlaneGeometry(350, 300);
+
+        // 2. Create the material (The paint)
+        // standard material reacts to light/shadows.
+        // color: 0x555555 is Dark Grey (Road/Concrete). Try 0x4caf50 for Green Grass.
+        const groundMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x4caf50, 
+            roughness: 0.8, 
+            metalness: 0.2 
+        });
+
+        // 3. Create the mesh
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+
+        // 4. Rotate it flat (By default planes stand up like walls)
+        ground.rotation.x = -Math.PI / 2; // Rotate -90 degrees
+
+        // 5. Enable Shadows
+        ground.receiveShadow = true;
+
+        // 6. Position it slightly lower than your buildings so they don't flicker
+        ground.position.y = -0.1; 
+
+        // 7. Add to scene
+        scene.add(ground);
+
+        // --- 3. LOAD THE CAMPUS MODEL ---
+        const loader = new GLTFLoader();
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        // The "Whitelist" of clickable buildings
+        const targetNames = [
+            "Admin", "BlockA", "BlockB", "BlockM", 
+            "Canteen", "DKBuilding1", "DKBuilding2", 
+            "Hall", "IDK", "Library", "Multipurpose1", "Multipurpose2"
+        ];
+
+        let clickableObjects = []; // We will store the found buildings here
+        let hoveredObject = null;  // Tracks what we are currently hovering
+
+        // NOTE: Ensure 'campus.glb' is in the SAME folder as this file!
+        loader.load('campus.glb', (gltf) => {
+        const model = gltf.scene;
+        scene.add(model);
+
+        model.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                child.receiveShadow = true;
+
+                // Check if this mesh is in our whitelist
+                if (targetNames.includes(child.name)) {
+                    
+                    // --- THE FIX STARTS HERE ---
+                    // We clone the material. This creates a unique copy for THIS specific building.
+                    // Now, changing this building's color won't affect its neighbors.
+                    child.material = child.material.clone();
+                    // --- THE FIX ENDS HERE ---
+
+                    // Save its original color
+                    child.userData.originalColor = child.material.color.getHex();
+                    
+                    clickableObjects.push(child);
+                }
+            }
+        });
+        
+        document.getElementById('status').innerText = `Ready: ${clickableObjects.length} Buildings Found`;
+    }, undefined, function (error) {
+        console.error(error);
+    });
+
+        // --- 4. INTERACTION LOGIC (HOVER & CLICK) ---
+
+        // Helper: Mouse Move
+        window.addEventListener('mousemove', (event) => {
+            // Convert mouse to 3D coordinates
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            // Raycast
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(clickableObjects);
+
+            if (intersects.length > 0) {
+                // We hit a building!
+                const hitObj = intersects[0].object;
+
+                if (hoveredObject !== hitObj) {
+                    // Reset previous object if exists
+                    if (hoveredObject) {
+                        hoveredObject.material.color.setHex(hoveredObject.userData.originalColor);
+                    }
+                    
+                    // Highlight new object (Bright Yellow)
+                    hoveredObject = hitObj;
+                    hoveredObject.material.color.set(0xffd700); 
+                    
+                    // Change cursor to Pointer Hand 👆
+                    document.body.style.cursor = 'pointer';
+                }
+            } else {
+                // We hit nothing (or non-clickable stuff)
+                if (hoveredObject) {
+                    hoveredObject.material.color.setHex(hoveredObject.userData.originalColor);
+                    hoveredObject = null;
+                }
+                document.body.style.cursor = 'default';
+            }
+        });
+
+        // Helper: Click
+        window.addEventListener('click', () => {
+            if (hoveredObject) {
+                // 1. Fill the HTML Input
+                const input = document.getElementById('locationInput');
+                input.value = hoveredObject.name;
+                
+                // 2. Flash the input box for visual feedback
+                input.style.backgroundColor = "#fff3cd";
+                setTimeout(() => input.style.backgroundColor = "#e8f6f3", 300);
+            }
+        });
+
+        // --- 5. ANIMATION LOOP ---
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- HELPER: TREE GENERATOR ---
+        function createTree(x, z) {
+            // 1. Trunk
+            const trunkGeo = new THREE.CylinderGeometry(2, 2, 6, 6);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 }); // Brown
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 3; // Half of height (6/2)
+            trunk.castShadow = true;
+            trunk.receiveShadow = true;
+
+            // 2. Leaves (Cone)
+            const leavesGeo = new THREE.ConeGeometry(6, 12, 6);
+            const leavesMat = new THREE.MeshStandardMaterial({ color: 0x228B22 }); // Forest Green
+            const leaves = new THREE.Mesh(leavesGeo, leavesMat);
+            leaves.position.y = 9; // Trunk height (6) + half leaves height (12/2)
+            leaves.castShadow = true;
+            leaves.receiveShadow = true;
+
+            // 3. Group them
+            const tree = new THREE.Group();
+            tree.add(trunk);
+            tree.add(leaves);
+
+            // 4. Randomize slightly (Rotation & Scale) for realism
+            tree.rotation.y = Math.random() * Math.PI; // Random rotation
+            const scale = 0.8 + Math.random() * 0.5;   // Random size (0.8x to 1.3x)
+            tree.scale.set(scale, scale, scale);
+
+            // 5. Place it
+            tree.position.set(x, 0, z);
+            scene.add(tree);
+        }
+
+        // --- PLANT A FOREST ---
+        // Add 50 random trees around the campus
+        for (let i = 0; i < 50; i++) {
+            // Random Position between -150 and 150
+            const x = (Math.random() - 0.5) * 300; 
+            const z = (Math.random() - 0.5) * 250;
+            
+            // Simple check: Don't plant trees in the very center (where buildings likely are)
+            if (x > -50 && x < 50 && z > -50 && z < 50) continue; 
+
+            createTree(x, z);
+        }
+        animate();
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
