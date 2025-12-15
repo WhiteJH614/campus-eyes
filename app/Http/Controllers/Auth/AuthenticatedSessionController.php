@@ -34,7 +34,7 @@ class AuthenticatedSessionController extends Controller
         $target = match ($role) {
             'technician' => route('technician.dashboard'),
             'admin' => '/admin/dashboard',
-            'reporter' => '/reporter/dashboard',
+            'reporter' => '/dashboard',
             default => route('dashboard', absolute: false),
         };
 
