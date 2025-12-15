@@ -128,6 +128,7 @@
                     <div class="text-sm font-semibold" style="color:#27AE60;">3. Resolve</div>
                     <p class="text-sm mt-2" style="color:#2C3E50;">
                         Technicians update status and notes so everyone stays informed until closure.
+                        abqhwhqiehqhieieqh
                     </p>
                 </div>
             </div>
