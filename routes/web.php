@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -9,7 +10,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Technician\TechnicianController;
 
 Route::get('/', function () {
-    return view('index');
+    return view('welcome');
 });
 
 Route::view('/login', 'Authentication.login')->name('login');
@@ -60,3 +61,5 @@ Route::get('/db-test', function () {
         return 'DB ERROR: ' . $e->getMessage();
     }
 });
+
+require __DIR__.'/auth.php';
