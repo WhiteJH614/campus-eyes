@@ -21,8 +21,8 @@
         ],
         'technician' => [
             ['label' => 'Task Dashboard', 'url' => '/technician/dashboard'],
-            ['label' => 'Assigned Jobs', 'url' => '/technician/jobs'],
-            ['label' => 'Completed Jobs', 'url' => '/technician/jobs?filter=completed'],
+            ['label' => 'Assigned Jobs', 'url' => '/technician/tasks'],
+            ['label' => 'Completed Jobs', 'url' => '/technician/completed'],
             ['label' => 'Profile', 'url' => '/profile'],
         ],
         'admin' => [

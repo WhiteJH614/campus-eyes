@@ -2,6 +2,11 @@
 
 @php
     $pageTitle = 'Assigned Jobs';
+    $breadcrumbs = [
+        ['label' => 'Home', 'url' => '/'],
+        ['label' => 'Technician Dashboard', 'url' => route('technician.dashboard')],
+        ['label' => 'Assigned Jobs'],
+    ];
 
     $urgColors = [
         'high' => ['#E74C3C', '#FFFFFF'],
@@ -24,20 +29,13 @@
                 <div>
                     <h1 class="text-2xl font-semibold text-[#2C3E50]">Assigned Jobs</h1>
                     <p class="text-sm text-[#7F8C8D]">
-                        Jobs currently assigned to you. Filter, sort, and update their status.
+                        Jobs currently assigned to you. Filter and review task details.
                     </p>
-                </div>
-                <div class="flex flex-wrap gap-2 text-sm">
-                    {{-- example export link if you add export later --}}
-                    {{-- <a href="{{ route('technician.my_jobs', array_merge(request()->all(), ['export' => 'csv'])) }}"
-                        class="px-3 py-2 rounded-lg border border-[#D7DDE5] bg-white text-[#1F4E79]">
-                        Export My Jobs (CSV)
-                    </a> --}}
                 </div>
             </div>
 
             {{-- Filters --}}
-            <form class="mt-4 grid gap-3 lg:grid-cols-5" method="get" action="{{ route('technician.my_jobs') }}">
+            <form class="mt-4 grid gap-3 lg:grid-cols-5" method="get" action="{{ route('technician.tasks') }}">
                 <input type="text" name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Search by Report ID"
                     class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]" />
 
@@ -95,7 +93,7 @@
                             @endphp
                             <tr class="border-t border-[#D7DDE5] hover:bg-[#F9FBFF]">
                                 <td class="px-3 py-2 font-semibold text-[#1F4E79]">
-                                    <a href="{{ route('technician.job_details', $job->id) }}">
+                                    <a href="/technician/tasks/{{ $job->id }}">
                                         {{ $job->id }}
                                     </a>
                                 </td>
@@ -105,70 +103,31 @@
                                 <td class="px-3 py-2">
                                     {{ optional(optional($job->room)->block)->campus->campus_name ?? '' }},
                                     {{ optional($job->room->block ?? null)->block_name ?? '' }},
-                                    {{ optional($job->room)->room_name ?? '' }},
+                                    {{ optional($job->room)->room_name ?? '' }}
                                 </td>
                                 <td class="px-3 py-2">
                                     {{ optional($job->category)->name ?? '-' }}
                                 </td>
                                 <td class="px-3 py-2">
-                                    <span class="px-2 py-1 rounded-full text-xs font-semibold w-full text-center inline-block"
+                                    <span class="px-2 py-1 rounded-full text-xs font-semibold inline-block w-full text-center"
                                         style="background-color: {{ $urgBg }}; color: {{ $urgFg }};">
                                         {{ $job->urgency ?? 'N/A' }}
                                     </span>
                                 </td>
-
                                 <td class="px-3 py-2">
-                                    <span class="px-2 py-1 rounded-full text-xs font-semibold inline-block"
+                                    <span class="px-2 py-1 rounded-full text-xs font-semibold inline-block w-full text-center"
                                         style="background-color: {{ $statusBg }}; color: {{ $statusFg }};">
                                         {{ str_replace('_', ' ', $job->status) }}
                                     </span>
                                 </td>
-
                                 <td class="px-3 py-2">
                                     {{ $job->due_at?->format('d M Y H:i') ?? '-' }}
                                 </td>
                                 <td class="px-3 py-2">
-                                    <div class="flex flex-col gap-2">
-
-                                        {{-- View details --}}
-                                        <a href="{{ route('technician.job_details', $job->id) }}"
-                                            class="text-xs font-semibold text-[#1F4E79]">
-                                            View
-                                        </a>
-
-                                        {{-- Start / In Progress --}}
-                                        @if (in_array($job->status, ['Pending', 'Assigned']))
-                                            <form method="post" action="{{ route('technician.update_status', $job->id) }}"
-                                                onsubmit="return confirm('Start this job and move it to In Progress?');">
-                                                @csrf
-                                                <input type="hidden" name="status" value="In_Progress">
-                                                <button type="submit" class="text-xs font-semibold text-[#3498DB]">
-                                                    Start / In Progress
-                                                </button>
-                                            </form>
-                                        @endif
-
-                                        {{-- Mark completed (with proof image) --}}
-                                        @if ($job->status === 'In_Progress')
-                                            <form method="post" action="{{ route('technician.complete_job', $job->id) }}"
-                                                enctype="multipart/form-data"
-                                                onsubmit="return confirm('Mark this job as completed and upload proof image?');">
-                                                @csrf
-
-                                                {{-- quick default note; you can replace with textarea if you like --}}
-                                                <input type="hidden" name="resolution_notes"
-                                                    value="Completed by technician via quick action button.">
-
-                                                <input type="file" name="proof_image" accept="image/*" class="text-xs mb-1"
-                                                    required>
-
-                                                <button type="submit" class="text-xs font-semibold text-[#27AE60]">
-                                                    Mark Completed
-                                                </button>
-                                            </form>
-                                        @endif
-
-                                    </div>
+                                    <a href="/technician/tasks/{{ $job->id }}"
+                                        class="text-xs font-semibold text-[#1F4E79]">
+                                        View
+                                    </a>
                                 </td>
                             </tr>
                         @empty

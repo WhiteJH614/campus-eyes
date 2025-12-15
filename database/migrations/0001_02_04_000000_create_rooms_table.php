@@ -14,9 +14,8 @@ return new class extends Migration
         Schema::create('rooms', function (Blueprint $table) {
             $table->id();
             $table->foreignId('block_id')->constrained()->cascadeOnDelete();
-            $table->integer('floor_number')->nullable();
-            $table->string('room_name');
-            $table->timestamps();
+            $table->integer('floor_number');
+            $table->string('room_name', 50);
         });
         
     }
