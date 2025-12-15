@@ -10,7 +10,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Technician\TechnicianController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('index');
 });
 
 Route::view('/login', 'Authentication.login')->name('login');
@@ -24,6 +24,11 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    // Generic logged-in dashboard (used by Breeze auth scaffolding)
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
+
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
     Route::get('/logout', function () {

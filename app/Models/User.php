@@ -3,9 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -18,16 +18,16 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'full_name',            // 对应 users.full_name
+        'name',                 // Primary display name
         'email',
-        'password',             // 建议数据库里也用 password 这个字段名
+        'password',
         'phone_number',
         'role',                 // Reporter / Technician / Admin
-        'reporter_role',        // Student / Staff （只对 Reporter 有意义）
+        'reporter_role',        // Student / Staff
         'campus',
-        'specialization',       // Technician 用
-        'availability_status',  // Technician 用：Available / Busy / On_Leave
-        'admin_level',          // Admin 用：Supervisor 等
+        'specialization',       // Technician specialization
+        'availability_status',  // Technician availability: Available / Busy / On_Leave
+        'admin_level',          // Admin level, e.g., Supervisor
     ];
 
     /**
@@ -69,5 +69,5 @@ class User extends Authenticatable
     {
         return $this->hasMany(Report::class, 'technician_id');
     }
-    
 }
+
