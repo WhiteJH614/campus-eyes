@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Technician;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Report;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -86,7 +88,9 @@ class TechnicianController extends Controller
 
     private function getDashboardData(int $technicianId): array
     {
-        $now = Carbon::now();
+        $now = Carbon::now('Asia/Kuala_Lumpur');
+        $startOfMonth = $now->copy()->startOfMonth();
+        $endOfMonth = $now->copy()->endOfMonth();
 
         $assignedCount = Report::where('technician_id', $technicianId)
             ->where('status', 'Assigned')
@@ -98,20 +102,18 @@ class TechnicianController extends Controller
 
         $completedThisMonthCount = Report::where('technician_id', $technicianId)
             ->where('status', 'Completed')
-            ->whereBetween('completed_at', [$now->startOfMonth(), $now->endOfMonth()])
+            ->whereBetween('completed_at', [$startOfMonth, $endOfMonth])
             ->count();
 
         $overdueCount = Report::where('technician_id', $technicianId)
             ->where('status', '!=', 'Completed')
-            ->whereNotNull('due_at')
-            ->where('due_at', '<', $now)
+            ->whereRaw('COALESCE(due_at, created_at) < ?', [$now])
             ->count();
 
         $nextOverdue = Report::where('technician_id', $technicianId)
             ->where('status', '!=', 'Completed')
-            ->whereNotNull('due_at')
-            ->where('due_at', '<', $now)
-            ->orderBy('due_at')
+            ->whereRaw('COALESCE(due_at, created_at) < ?', [$now])
+            ->orderByRaw('COALESCE(due_at, created_at)')
             ->first();
 
         $recent = Report::where('technician_id', $technicianId)
@@ -156,14 +158,20 @@ class TechnicianController extends Controller
 
         $query = Report::with(['room.block.campus', 'category'])
             ->where('technician_id', $user->id)
-            ->whereIn('status', ['Assigned', 'In_Progress']);
+            ->whereIn('status', ['Pending', 'Assigned', 'In_Progress']);
 
         if ($request->filled('q')) {
             $query->where('id', 'like', '%' . trim($request->q) . '%');
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'Overdue') {
+                $query->where('status', '!=', 'Completed')
+                    ->whereNotNull('due_at')
+                    ->where('due_at', '<', Carbon::now('Asia/Kuala_Lumpur'));
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         if ($request->filled('urgency')) {
@@ -259,9 +267,7 @@ class TechnicianController extends Controller
             $query->whereDate('completed_at', '<=', $request->to);
         }
         if ($request->filled('category')) {
-            $query->whereHas('category', function ($q) use ($request) {
-                $q->where('name', $request->category);
-            });
+            $query->where('category_id', $request->category);
         }
         if ($request->filled('block')) {
             $query->whereHas('room.block', function ($q) use ($request) {
@@ -293,26 +299,26 @@ class TechnicianController extends Controller
         );
 
         $rows = $paginated->map(function (Report $r) {
+            $loc = optional($r->room);
+            $block = optional($loc?->block);
             $start = $r->assigned_at ?? $r->created_at;
             $end = $r->completed_at;
             $duration = ($start && $end) ? $start->diffForHumans($end, true) : '-';
-            $loc = trim(
-                collect([
-                    optional(optional($r->room)->block)->block_name,
-                    optional($r->room)->room_name,
-                ])->filter()->implode(', ')
-            );
+
             return [
-                'report_id' => $r->id,
-                'id' => 'R-' . $r->id,
-                'loc' => $loc ?: '-',
-                'cat' => optional($r->category)->name ?: '-',
-                'urg' => $r->urgency ?? '-',
-                'done' => optional($r->completed_at)?->format('Y-m-d H:i') ?? '-',
-                'due_at' => optional($r->due_at)?->format('Y-m-d H:i') ?? '-',
+                'id' => $r->id,
+                'reporter_id' => $r->reporter_id,
+                'room' => $loc?->room_name ?? '-',
+                'block' => $block?->block_name ?? '-',
+                'category' => optional($r->category)->name ?? '-',
+                'description' => $r->description ?? '-',
+                'urgency' => $r->urgency ?? '-',
                 'status' => $r->status ?? '-',
+                'resolution_notes' => $r->resolution_notes ?? '-',
+                'report_at' => optional($r->created_at)?->format('Y-m-d H:i') ?? '-',
+                'due_at' => optional($r->due_at)?->format('Y-m-d H:i') ?? '-',
+                'completed_at' => optional($r->completed_at)?->format('Y-m-d H:i') ?? '-',
                 'duration' => $duration,
-                'notes' => $r->resolution_notes ?? '-',
             ];
         })->toArray();
 
@@ -325,6 +331,8 @@ class TechnicianController extends Controller
             ? sprintf('%dh %02dm', floor($avgSeconds / 3600), floor($avgSeconds % 3600 / 60))
             : '-';
 
+        $categories = Category::orderBy('name')->get(['id', 'name']);
+
         return view('Technician.completed', [
             'summary' => [
                 'total' => $total,
@@ -333,6 +341,7 @@ class TechnicianController extends Controller
             ],
             'rows' => $rows,
             'pagination' => $paginated,
+            'categories' => $categories,
         ]);
     }
 
@@ -361,17 +370,19 @@ class TechnicianController extends Controller
             'phone_number_digits' => ['nullable', 'regex:/^[0-9]{9,11}$/'],
             'campus' => ['nullable', Rule::in(['Penang'])],
             'specialization' => ['nullable', 'array'],
-            'specialization.*' => [Rule::in([
-                'Electrical',
-                'Networking',
-                'AirConditioning',
-                'Plumbing',
-                'Carpentry',
-                'AudioVisual',
-                'Landscaping',
-                'Security',
-                'Cleaning',
-            ])],
+            'specialization.*' => [
+                Rule::in([
+                    'Electrical',
+                    'Networking',
+                    'AirConditioning',
+                    'Plumbing',
+                    'Carpentry',
+                    'AudioVisual',
+                    'Landscaping',
+                    'Security',
+                    'Cleaning',
+                ])
+            ],
             'availability_status' => ['nullable', 'in:Available,Busy,On_Leave'],
         ]);
 
