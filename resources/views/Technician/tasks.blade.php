@@ -101,14 +101,20 @@
                                     </span>
                                 </td>
                                 <td class="px-3 py-2">
-                                    <template x-if="job.is_overdue">
-                                        <span class="px-2 py-1 rounded-full text-xs font-semibold inline-block w-full text-center"
-                                            style="background-color:#E74C3C;color:#FFFFFF;"
-                                            x-text="`Overdue ${job.overdue_human}`"></span>
-                                    </template>
-                                    <template x-if="!job.is_overdue">
-                                        <span class="text-xs text-[#7F8C8D]">On track</span>
-                                    </template>
+                                    <div class="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-semibold w-full justify-center"
+                                        :style="job.is_overdue ? 'background:#FDECEA;color:#C0392B;border:1px solid #F5C6CB;' : 'background:#E8F8F0;color:#1E8449;border:1px solid #BFE5D0;'">
+                                        <!-- <span
+                                            :style="job.is_overdue ? 'background:#E74C3C;color:#FFFFFF;' : 'background:#27AE60;color:#FFFFFF;'"
+                                            class="h-6 w-6 rounded-full inline-flex items-center justify-center text-[10px] font-bold">
+                                            <template x-if="job.is_overdue">!</template>
+                                            <template x-if="!job.is_overdue">✓</template>
+                                        </span> -->
+                                        <div class="flex flex-col leading-tight text-left">
+                                            <span x-text="job.is_overdue ? 'Overdue' : 'On track'"></span>
+                                            <span class="text-[11px] font-normal"
+                                                x-text="job.is_overdue && job.overdue_human_display ? job.overdue_human_display : ''"></span>
+                                        </div>
+                                    </div>
                                 </td>
                                 <td class="px-3 py-2" x-text="job.due_at"></td>
                                 <td class="px-3 py-2">
@@ -184,7 +190,27 @@
                         if (!res.ok) throw new Error('Failed to load tasks');
                         const json = await res.json();
                         const data = json.data || {};
-                        this.jobs = data.jobs || [];
+                        const humanize = (ms) => {
+                            if (!ms || ms < 0) return '';
+                            const h = Math.floor(ms / 3600000);
+                            const m = Math.floor((ms % 3600000) / 60000);
+                            if (h > 0) return `${h}h ${m}m`;
+                            return `${m}m`;
+                        };
+
+                        this.jobs = (data.jobs || []).map(j => {
+                            let overdueDisplay = '';
+                            if (j.is_overdue && j.due_at) {
+                                const due = new Date(j.due_at.replace(' ', 'T'));
+                                const now = new Date();
+                                const diff = now - due;
+                                overdueDisplay = diff > 0 ? humanize(diff) : '';
+                            }
+                            return {
+                                ...j,
+                                overdue_human_display: overdueDisplay,
+                            };
+                        });
                         this.pagination = data.pagination || { current_page: 1, last_page: 1, total: 0 };
                     } catch (e) {
                         console.error(e);

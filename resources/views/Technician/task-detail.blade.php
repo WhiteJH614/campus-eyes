@@ -8,6 +8,14 @@
 @section('content')
     <section class="space-y-6" x-data="taskDetailPage({{ (int) $jobId }})" x-init="load()">
         {{-- Top card: basic info --}}
+        <div class="flex justify-start mb-3">
+            <a href="{{ route('technician.tasks') }}"
+                class="rounded-lg px-4 py-2 font-semibold border text-sm"
+                style="border-color:#D7DDE5;color:#1F4E79;background:#FFFFFF;">
+                Back to jobs
+            </a>
+        </div>
+
         <div class="rounded-2xl shadow-sm border p-6" style="background:#FFFFFF;border-color:#D7DDE5;">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                 <div>
@@ -21,6 +29,10 @@
                     x-text="urgencyChip.label"></span>
                 <span class="px-3 py-1 rounded-full font-semibold" :style="chipStyle(statusChip.bg, statusChip.fg)"
                     x-text="statusChip.label"></span>
+                <span class="px-3 py-1 rounded-full font-semibold"
+                    :style="job.is_overdue ? 'background:#E74C3C;color:#FFFFFF;' : 'background:#27AE60;color:#FFFFFF;'">
+                    <span x-text="job.overdue_label"></span>
+                </span>
                 <template x-if="job.status === 'Completed' && job.completed_at">
                     <span class="px-3 py-1 rounded-full font-semibold" style="background-color:#27AE60;color:#FFFFFF;">
                         Completed at: <span x-text="job.completed_at"></span>
@@ -45,7 +57,10 @@
                 </div>
                 <div class="space-y-2">
                     <div class="text-sm font-semibold" style="color:#000000;">Reported at</div>
-                    <div style="color:#000000;" x-text="job.reported_at || '-'"></div>
+                    <div style="color:#000000;">
+                        <div x-text="job.reported_date || '-'"></div>
+                        <div class="text-xs text-[#7F8C8D]" x-text="job.reported_time || ''"></div>
+                    </div>
                 </div>
             </div>
 
@@ -84,6 +99,10 @@
                                 <span class="text-sm" style="color:#000000;">No technician proof yet</span>
                             </div>
                         </template>
+                        <div class="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold"
+                            :style="job.is_overdue ? 'background:#E74C3C;color:#FFFFFF;' : 'background:#27AE60;color:#FFFFFF;'"
+                            x-text="job.overdue_label">
+                        </div>
 
                         <template x-if="afterPhotos.length > 1">
                             <button type="button"
@@ -123,17 +142,19 @@
                                 </button>
                             </form>
                         </template>
-                        <form x-ref="addProofForm" method="post" :action="`/technician/tasks/${jobId}/proofs`"
-                            enctype="multipart/form-data" class="flex items-center gap-2">
-                            @csrf
-                            <input type="file" name="proof_images[]" accept="image/*" multiple class="hidden"
-                                x-ref="addProofInput" @change="$refs.addProofForm.submit()">
-                            <button type="button" class="px-4 py-2 rounded-lg text-xs font-semibold shadow-sm"
-                                style="background:linear-gradient(135deg,#e8f4ff,#d6e9ff);color:#1f4e79;border:1px solid #b6d4fe;"
-                                @click.prevent="$refs.addProofInput.click()">
-                                Add more images
-                            </button>
-                        </form>
+                        <template x-if="job.status === 'Completed'">
+                            <form x-ref="addProofForm" method="post" :action="`/technician/tasks/${jobId}/proofs`"
+                                enctype="multipart/form-data" class="flex items-center gap-2">
+                                @csrf
+                                <input type="file" name="proof_images[]" accept="image/*" multiple class="hidden"
+                                    x-ref="addProofInput" @change="$refs.addProofForm.submit()">
+                                <button type="button" class="px-4 py-2 rounded-lg text-xs font-semibold shadow-sm"
+                                    style="background:linear-gradient(135deg,#e8f4ff,#d6e9ff);color:#1f4e79;border:1px solid #b6d4fe;"
+                                    @click.prevent="$refs.addProofInput.click()">
+                                    Add more images
+                                </button>
+                            </form>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -389,17 +410,61 @@
                         const json = await res.json();
                         const data = json.data || {};
 
-                this.job = {
-                    id: data.id,
-                    description: data.description,
-                    urgency: data.urgency,
-                    status: data.status_value, // must match 'In_Progress' / 'Completed' / etc.
-                    reported_at: data.reported_at ? new Date(data.reported_at).toLocaleString() : '-',
-                    due_at: data.due_at ? new Date(data.due_at).toLocaleString() : '-',
-                    completed_at: data.completed_at ? new Date(data.completed_at).toLocaleString() : null,
-                    location: [data.location?.campus, data.location?.block, data.location?.room].filter(Boolean).join(', '),
-                    category: data.category,
-                };
+                        const fmt = (iso) => {
+                            if (!iso) return { date: '-', time: '' };
+                            const d = new Date(iso);
+                            if (isNaN(d)) return { date: '-', time: '' };
+                            return {
+                                date: d.toLocaleDateString(),
+                                time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                                full: d,
+                                display: d.toLocaleString(),
+                            };
+                        };
+                        const reported = fmt(data.reported_at);
+                        const due = fmt(data.due_at);
+                        const completed = fmt(data.completed_at);
+                        const now = new Date();
+
+                        let isOverdue = false;
+                        let overdueLabel = 'On track';
+                        if (due.full) {
+                            if (data.status_value !== 'Completed' && now > due.full) {
+                                isOverdue = true;
+                                const diffMs = now - due.full;
+                                const h = Math.floor(diffMs / 3600000);
+                                const m = Math.floor((diffMs % 3600000) / 60000);
+                                const label = h > 0 ? `${h}h ${m}m` : `${m}m`;
+                                overdueLabel = `Overdue ${label}`;
+                            } else if (completed.full && completed.full > due.full) {
+                                isOverdue = true;
+                                const diffMs = completed.full - due.full;
+                                const h = Math.floor(diffMs / 3600000);
+                                const m = Math.floor((diffMs % 3600000) / 60000);
+                                const label = h > 0 ? `${h}h ${m}m` : `${m}m`;
+                                overdueLabel = `Completed late ${label}`;
+                            }
+                        }
+
+                        this.job = {
+                            id: data.id,
+                            description: data.description,
+                            urgency: data.urgency,
+                            status: data.status_value, // must match 'In_Progress' / 'Completed' / etc.
+                            reported_at: reported.display || '-',
+                            reported_date: reported.date,
+                            reported_time: reported.time,
+                            due_at: due.display || '-',
+                            due_date: due.date,
+                            due_time: due.time,
+                            completed_at: completed.display || null,
+                            completed_date: completed.date,
+                            completed_time: completed.time,
+                            is_overdue: isOverdue,
+                            overdue_label: overdueLabel,
+                            location: [data.location?.campus, data.location?.block, data.location?.room].filter(Boolean).join(', '),
+                            category: data.category,
+                        };
 
                         this.beforePhoto = data.attachments?.reporter_proof || null;
                         this.afterPhotos = (data.attachments?.technician_proofs || []).map(p => ({

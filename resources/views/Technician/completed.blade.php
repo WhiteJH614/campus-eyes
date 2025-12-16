@@ -75,6 +75,7 @@
                             <th class="text-left px-3 py-2">Description</th>
                             <th class="text-left px-3 py-2">Urgency</th>
                             <th class="text-left px-3 py-2">Status</th>
+                            <th class="text-left px-3 py-2">Completion Due</th>
                             <th class="text-left px-3 py-2">Resolution Notes</th>
                             <th class="text-left px-3 py-2">Reported At</th>
                             <th class="text-left px-3 py-2">Due At</th>
@@ -85,10 +86,10 @@
                     </thead>
                     <tbody class="text-[#2C3E50] divide-y divide-[#D7DDE5]">
                         <template x-if="loading">
-                            <tr><td colspan="12" class="px-3 py-4 text-center text-[#7F8C8D]">Loading...</td></tr>
+                            <tr><td colspan="14" class="px-3 py-4 text-center text-[#7F8C8D]">Loading...</td></tr>
                         </template>
                         <template x-if="!loading && rows.length === 0">
-                            <tr><td colspan="12" class="px-3 py-4 text-center text-[#7F8C8D]">No completed tasks found for the selected filters.</td></tr>
+                            <tr><td colspan="14" class="px-3 py-4 text-center text-[#7F8C8D]">No completed tasks found for the selected filters.</td></tr>
                         </template>
                         <template x-for="row in rows" :key="row.id">
                             <tr class="bg-white">
@@ -103,10 +104,32 @@
                                 <td class="px-3 py-2">
                                     <span class="px-2 py-1 rounded-full text-xs font-semibold" style="background:#27AE60;color:#FFFFFF;" x-text="row.status"></span>
                                 </td>
+                                <td class="px-3 py-2 text-center">
+                                    <template x-if="row.is_overdue">
+                                        <span class="px-3 py-2 rounded-2xl text-xs font-semibold inline-block"
+                                            style="background:#E74C3C;color:#FFFFFF;"
+                                            x-text="row.overdue_label"></span>
+                                    </template>
+                                    <template x-if="!row.is_overdue">
+                                        <span class="px-3 py-2 rounded-2xl text-xs font-semibold inline-block"
+                                            style="background:#E8F8F0;color:#1E8449;border:1px solid #BFE5D0;">
+                                            On time
+                                        </span>
+                                    </template>
+                                </td>
                                 <td class="px-3 py-2 text-[#7F8C8D]" x-text="row.resolution_notes"></td>
-                                <td class="px-3 py-2 whitespace-nowrap" x-text="row.report_at"></td>
-                                <td class="px-3 py-2 whitespace-nowrap" x-text="row.due_at"></td>
-                                <td class="px-3 py-2 whitespace-nowrap" x-text="row.completed_at"></td>
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    <div x-text="row.report_date"></div>
+                                    <div class="text-xs text-[#7F8C8D]" x-text="row.report_time"></div>
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    <div x-text="row.due_date"></div>
+                                    <div class="text-xs text-[#7F8C8D]" x-text="row.due_time"></div>
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    <div x-text="row.completed_date"></div>
+                                    <div class="text-xs text-[#7F8C8D]" x-text="row.completed_time"></div>
+                                </td>
                                 <td class="px-3 py-2" x-text="row.duration"></td>
                                 <td class="px-3 py-2">
                                     <a :href="`/technician/tasks/${row.id}`" class="text-sm font-semibold text-[#1F4E79] underline">View</a>
@@ -168,7 +191,49 @@
                         const json = await res.json();
                         const data = json.data || {};
                         this.summary = data.summary || this.summary;
-                        this.rows = data.rows || [];
+                        const humanize = (ms) => {
+                            if (!ms || ms < 0) return '';
+                            const h = Math.floor(ms / 3600000);
+                            const m = Math.floor((ms % 3600000) / 60000);
+                            if (h > 0) return `${h}h ${m}m`;
+                            return `${m}m`;
+                        };
+                        const toParts = (val) => {
+                            if (!val || val === '-') return { date: '-', time: '' };
+                            const [d, t] = val.split(' ');
+                            return { date: d || '-', time: t || '' };
+                        };
+                        this.rows = (data.rows || []).map(row => {
+                            const r = toParts(row.report_at);
+                            const d = toParts(row.due_at);
+                            const c = toParts(row.completed_at);
+
+                            // compute lateness vs due (completed tasks only)
+                            let overdueLabel = 'On time';
+                            let isOverdue = false;
+                            if (row.completed_at && row.due_at && row.completed_at !== '-' && row.due_at !== '-') {
+                                const due = new Date(row.due_at.replace(' ', 'T'));
+                                const comp = new Date(row.completed_at.replace(' ', 'T'));
+                                if (!isNaN(due) && !isNaN(comp) && comp > due) {
+                                    const diffMs = comp - due;
+                                    const label = humanize(diffMs);
+                                    overdueLabel = label ? `Late by ${label}` : 'Late';
+                                    isOverdue = true;
+                                }
+                            }
+
+                            return {
+                                ...row,
+                                report_date: r.date,
+                                report_time: r.time,
+                                due_date: d.date,
+                                due_time: d.time,
+                                completed_date: c.date,
+                                completed_time: c.time,
+                                is_overdue: isOverdue,
+                                overdue_label: overdueLabel,
+                            };
+                        });
                         this.pagination = data.pagination || this.pagination;
                         this.categories = data.categories || [];
                     } catch (e) {
