@@ -3,13 +3,20 @@
 namespace App\Http\Controllers\Technician;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Report;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
 use App\Models\Attachment;
+use App\Factories\SortStrategyFactory;
+use App\Services\TechnicianJobView;
 
 class TechnicianController extends Controller
 {
@@ -81,7 +88,9 @@ class TechnicianController extends Controller
 
     private function getDashboardData(int $technicianId): array
     {
-        $now = Carbon::now();
+        $now = Carbon::now('Asia/Kuala_Lumpur');
+        $startOfMonth = $now->copy()->startOfMonth();
+        $endOfMonth = $now->copy()->endOfMonth();
 
         $assignedCount = Report::where('technician_id', $technicianId)
             ->where('status', 'Assigned')
@@ -93,20 +102,18 @@ class TechnicianController extends Controller
 
         $completedThisMonthCount = Report::where('technician_id', $technicianId)
             ->where('status', 'Completed')
-            ->whereBetween('completed_at', [$now->startOfMonth(), $now->endOfMonth()])
+            ->whereBetween('completed_at', [$startOfMonth, $endOfMonth])
             ->count();
 
         $overdueCount = Report::where('technician_id', $technicianId)
             ->where('status', '!=', 'Completed')
-            ->whereNotNull('due_at')
-            ->where('due_at', '<', $now)
+            ->whereRaw('COALESCE(due_at, created_at) < ?', [$now])
             ->count();
 
         $nextOverdue = Report::where('technician_id', $technicianId)
             ->where('status', '!=', 'Completed')
-            ->whereNotNull('due_at')
-            ->where('due_at', '<', $now)
-            ->orderBy('due_at')
+            ->whereRaw('COALESCE(due_at, created_at) < ?', [$now])
+            ->orderByRaw('COALESCE(due_at, created_at)')
             ->first();
 
         $recent = Report::where('technician_id', $technicianId)
@@ -151,30 +158,42 @@ class TechnicianController extends Controller
 
         $query = Report::with(['room.block.campus', 'category'])
             ->where('technician_id', $user->id)
-            ->whereIn('status', ['Assigned', 'In_Progress']);
+            ->whereIn('status', ['Pending', 'Assigned', 'In_Progress']);
 
         if ($request->filled('q')) {
             $query->where('id', 'like', '%' . trim($request->q) . '%');
         }
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'Overdue') {
+                $query->where('status', '!=', 'Completed')
+                    ->whereNotNull('due_at')
+                    ->where('due_at', '<', Carbon::now('Asia/Kuala_Lumpur'));
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         if ($request->filled('urgency')) {
             $query->where('urgency', $request->urgency);
         }
 
-        if ($request->sort === 'due') {
-            $query->orderBy('due_at');
-        } elseif ($request->sort === 'urgency') {
-            $query->orderByRaw("FIELD(urgency,'High','Medium','Low')");
-        } else {
-            $query->orderByDesc('created_at');
-        }
+        $sortKey = $request->query('sort', 'due');
+
+        $reports = $query->get();
+        $jobView = new TechnicianJobView(SortStrategyFactory::make($sortKey));
+        $sorted = $jobView->getSortedReports($reports);
+
+        $perPage = 10;
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $items = $sorted->slice(($page - 1) * $perPage, $perPage)->values();
+        $paginator = new LengthAwarePaginator($items, $sorted->count(), $perPage, $page, [
+            'path' => $request->url(),
+            'query' => $request->query(),
+        ]);
 
         return view('Technician.tasks', [
-            'jobs' => $query->paginate(10)->withQueryString(),
+            'jobs' => $paginator,
             'filters' => $request->only(['q', 'status', 'urgency', 'sort']),
         ]);
     }
@@ -248,9 +267,7 @@ class TechnicianController extends Controller
             $query->whereDate('completed_at', '<=', $request->to);
         }
         if ($request->filled('category')) {
-            $query->whereHas('category', function ($q) use ($request) {
-                $q->where('name', $request->category);
-            });
+            $query->where('category_id', $request->category);
         }
         if ($request->filled('block')) {
             $query->whereHas('room.block', function ($q) use ($request) {
@@ -266,40 +283,55 @@ class TechnicianController extends Controller
             $query->where('completed_at', '>=', now()->subDays($range));
         }
 
-        $reports = $query->orderByDesc('completed_at')->paginate(15)->withQueryString();
+        $sortKey = $request->query('sort', 'due');
+        $reportsCollection = $query->get();
+        $jobView = new TechnicianJobView(SortStrategyFactory::make($sortKey));
+        $sortedCompleted = $jobView->getSortedReports($reportsCollection);
 
-        $rows = $reports->map(function (Report $r) {
+        $perPage = 15;
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $paginated = new LengthAwarePaginator(
+            $sortedCompleted->slice(($page - 1) * $perPage, $perPage)->values(),
+            $sortedCompleted->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        $rows = $paginated->map(function (Report $r) {
+            $loc = optional($r->room);
+            $block = optional($loc?->block);
             $start = $r->assigned_at ?? $r->created_at;
             $end = $r->completed_at;
             $duration = ($start && $end) ? $start->diffForHumans($end, true) : '-';
-            $loc = trim(
-                collect([
-                    optional(optional($r->room)->block)->block_name,
-                    optional($r->room)->room_name,
-                ])->filter()->implode(', ')
-            );
+
             return [
-                'report_id' => $r->id,
-                'id' => 'R-' . $r->id,
-                'loc' => $loc ?: '-',
-                'cat' => optional($r->category)->name ?: '-',
-                'urg' => $r->urgency ?? '-',
-                'done' => optional($r->completed_at)?->format('Y-m-d H:i') ?? '-',
-                'due_at' => optional($r->due_at)?->format('Y-m-d H:i') ?? '-',
+                'id' => $r->id,
+                'reporter_id' => $r->reporter_id,
+                'room' => $loc?->room_name ?? '-',
+                'block' => $block?->block_name ?? '-',
+                'category' => optional($r->category)->name ?? '-',
+                'description' => $r->description ?? '-',
+                'urgency' => $r->urgency ?? '-',
                 'status' => $r->status ?? '-',
+                'resolution_notes' => $r->resolution_notes ?? '-',
+                'report_at' => optional($r->created_at)?->format('Y-m-d H:i') ?? '-',
+                'due_at' => optional($r->due_at)?->format('Y-m-d H:i') ?? '-',
+                'completed_at' => optional($r->completed_at)?->format('Y-m-d H:i') ?? '-',
                 'duration' => $duration,
-                'notes' => $r->resolution_notes ?? '-',
             ];
         })->toArray();
 
-        $total = $reports->total();
-        $highUrgency = $reports->where('urgency', 'High')->count();
-        $avgSeconds = $reports->filter(fn($r) => $r->assigned_at && $r->completed_at)
+        $total = $paginated->total();
+        $highUrgency = $reportsCollection->where('urgency', 'High')->count();
+        $avgSeconds = $reportsCollection->filter(fn($r) => $r->assigned_at && $r->completed_at)
             ->map(fn($r) => $r->assigned_at->diffInSeconds($r->completed_at))
             ->avg();
         $avgTime = $avgSeconds
             ? sprintf('%dh %02dm', floor($avgSeconds / 3600), floor($avgSeconds % 3600 / 60))
             : '-';
+
+        $categories = Category::orderBy('name')->get(['id', 'name']);
 
         return view('Technician.completed', [
             'summary' => [
@@ -308,7 +340,8 @@ class TechnicianController extends Controller
                 'high_urgency' => $highUrgency,
             ],
             'rows' => $rows,
-            'pagination' => $reports,
+            'pagination' => $paginated,
+            'categories' => $categories,
         ]);
     }
 
@@ -324,22 +357,64 @@ class TechnicianController extends Controller
 
     public function updateProfile(Request $request)
     {
-        $user = Auth::user();
-        if (!$user || $user->role !== 'Technician') {
+        $authUser = Auth::user();
+        if (!$authUser || $authUser->role !== 'Technician') {
             abort(403);
         }
 
         $data = $request->validate([
-            'full_name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'phone_number' => ['nullable', 'string', 'max:50'],
-            'campus' => ['nullable', 'string', 'max:255'],
-            'specialization' => ['nullable', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $authUser->id],
+            // Digits only; we will prepend +60 before saving
+            // Allow 9-11 digits; a single leading 0 will be trimmed before storing with +60
+            'phone_number_digits' => ['nullable', 'regex:/^[0-9]{9,11}$/'],
+            'campus' => ['nullable', Rule::in(['Penang'])],
+            'specialization' => ['nullable', 'array'],
+            'specialization.*' => [
+                Rule::in([
+                    'Electrical',
+                    'Networking',
+                    'AirConditioning',
+                    'Plumbing',
+                    'Carpentry',
+                    'AudioVisual',
+                    'Landscaping',
+                    'Security',
+                    'Cleaning',
+                ])
+            ],
             'availability_status' => ['nullable', 'in:Available,Busy,On_Leave'],
         ]);
 
-        $user->fill($data);
-        $user->save();
+        // Normalize phone: allow optional leading 0, then store as +60########
+        $phoneDigits = $data['phone_number_digits'] ?? null;
+        if ($phoneDigits !== null && $phoneDigits !== '') {
+            if (str_starts_with($phoneDigits, '0')) {
+                $phoneDigits = substr($phoneDigits, 1);
+            }
+
+            // Enforce final length after trimming leading zero
+            if (strlen($phoneDigits) < 8 || strlen($phoneDigits) > 10) {
+                return back()
+                    ->withErrors(['phone_number_digits' => 'Phone number must be 8-10 digits after the +60 prefix.'])
+                    ->withInput();
+            }
+
+            $data['phone_number'] = '+60' . $phoneDigits;
+        } else {
+            $data['phone_number'] = null;
+        }
+        unset($data['phone_number_digits']);
+
+        // Store multiple selections as a comma-separated string
+        $specializationValues = $data['specialization'] ?? [];
+        $data['specialization'] = $specializationValues ? implode(',', $specializationValues) : null;
+
+        // Load the concrete Eloquent User model instance so fill() is available to static analysis
+        /** @var \App\Models\User $userModel */
+        $userModel = User::findOrFail($authUser->id);
+        $userModel->fill($data);
+        $userModel->save();
 
         return back()->with('success', 'Profile updated.');
     }
@@ -360,8 +435,10 @@ class TechnicianController extends Controller
             return back()->withErrors(['current_password' => 'Current password is incorrect.']);
         }
 
-        $user->password = $request->new_password;
-        $user->save();
+        /** @var \App\Models\User $userModel */
+        $userModel = User::findOrFail($user->id);
+        $userModel->password = Hash::make($request->new_password);
+        $userModel->save();
 
         return back()->with('success', 'Password updated.');
     }
@@ -435,16 +512,16 @@ class TechnicianController extends Controller
 
         foreach ($request->file('proof_images', []) as $img) {
             $storedPath = $img->store('attachments/technician', 'public');
-        
+
             Attachment::create([
-                'report_id'      => $job->id,
-                'file_name'      => $img->getClientOriginalName(),
-                'file_path'      => $storedPath,
-                'file_type'      => $img->getClientMimeType(),
-                'attachment_type'=> 'TECHNICIAN_PROOF',
+                'report_id' => $job->id,
+                'file_name' => $img->getClientOriginalName(),
+                'file_path' => $storedPath,
+                'file_type' => $img->getClientMimeType(),
+                'attachment_type' => 'TECHNICIAN_PROOF',
             ]);
         }
-        
+
 
         return redirect()
             ->route('technician.task_detail', $job->id)

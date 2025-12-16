@@ -6,7 +6,7 @@
     // Use Laravel auth user instead of manual session
     $authUser = auth()->user();
 
-    $name = $authUser?->full_name ?? 'Guest';
+    $name = $authUser?->name ?? 'Guest';
     // In DB: 'Reporter', 'Technician', 'Admin'
     $rawRole = $authUser?->role ?? null;
     $role = $rawRole ? strtolower($rawRole) : ''; // reporter / technician / admin / ''
@@ -23,7 +23,7 @@
             ['label' => 'Task Dashboard', 'url' => '/technician/dashboard'],
             ['label' => 'Assigned Jobs', 'url' => '/technician/tasks'],
             ['label' => 'Completed Jobs', 'url' => '/technician/completed'],
-            ['label' => 'Profile', 'url' => '/profile'],
+            ['label' => 'Profile', 'url' => '/technician/profile'],
         ],
         'admin' => [
             ['label' => 'Admin Dashboard', 'url' => '/admin/dashboard'],
@@ -122,8 +122,8 @@
                             </span>
                         </div>
                         <div class="hidden sm:flex items-center gap-3 text-sm">
-                            <a href="/profile" class="hover:underline" style="color:#1ABC9C;">Profile</a>
-                            <a href="/change-password" class="hover:underline" style="color:#1ABC9C;">Change Password</a>
+                            <!-- <a href="/profile" class="hover:underline" style="color:#1ABC9C;">Profile</a>
+                            <a href="/change-password" class="hover:underline" style="color:#1ABC9C;">Change Password</a> -->
                             {{-- If your logout route is POST, wrap in a form instead --}}
                             <form method="POST" action="{{ route('logout') }}" class="inline">
                                 @csrf

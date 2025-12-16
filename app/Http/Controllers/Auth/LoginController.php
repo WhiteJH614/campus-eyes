@@ -36,7 +36,8 @@ class LoginController extends Controller
         // Role-based redirect
         switch ($user->role) {
             case 'Technician':
-                return redirect()->to('/technician/dashboard');
+                // Technicians land directly on their dashboard
+                return redirect()->route('technician.dashboard');
             case 'Admin':
                 return redirect()->to('/admin/dashboard');
             case 'Reporter':

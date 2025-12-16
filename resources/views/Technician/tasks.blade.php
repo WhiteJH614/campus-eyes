@@ -20,6 +20,7 @@
         'In_Progress' => ['#3498DB', '#FFFFFF'],
         'Completed' => ['#27AE60', '#FFFFFF'],
     ];
+    $nowMy = now('Asia/Kuala_Lumpur');
 @endphp
 
 @section('content')
@@ -41,7 +42,7 @@
 
                 <select name="status" class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]">
                     <option value="">Status</option>
-                    @foreach (['Assigned', 'In_Progress'] as $status)
+                    @foreach (['Pending', 'Assigned', 'In_Progress', 'Overdue'] as $status)
                         <option value="{{ $status }}" @selected(($filters['status'] ?? '') === $status)>
                             {{ str_replace('_', ' ', $status) }}
                         </option>
@@ -56,9 +57,9 @@
                 </select>
 
                 <select name="sort" class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]">
-                    <option value="">Sort: Reported date (latest)</option>
-                    <option value="due" @selected(($filters['sort'] ?? '') === 'due')>Sort: Due date</option>
+                    <option value="due" @selected(($filters['sort'] ?? '') === 'due')>Sort: Due date (default)</option>
                     <option value="urgency" @selected(($filters['sort'] ?? '') === 'urgency')>Sort: Urgency</option>
+                    <option value="block" @selected(($filters['sort'] ?? '') === 'block')>Sort: Block</option>
                 </select>
 
                 <button type="submit" class="rounded-lg px-4 py-2 font-semibold bg-[#1F4E79] text-white">
@@ -77,6 +78,7 @@
                             <th class="text-left px-3 py-2">Category</th>
                             <th class="text-left px-3 py-2">Urgency</th>
                             <th class="text-left px-3 py-2">Status</th>
+                            <th class="text-left px-3 py-2">Overdue</th>
                             <th class="text-left px-3 py-2">Due date</th>
                             <th class="text-left px-3 py-2">Actions</th>
                         </tr>
@@ -90,6 +92,9 @@
 
                                 $statusBg = $statusColors[$job->status][0] ?? '#D7DDE5';
                                 $statusFg = $statusColors[$job->status][1] ?? '#2C3E50';
+                                $due = $job->due_at;
+                                $isOverdue = ($job->status === 'Overdue') || ($due && $due->isPast() && $job->status !== 'Completed');
+                                $overdueDuration = $isOverdue && $due ? $due->copy()->setTimezone($nowMy->timezone)->diffForHumans($nowMy, true) : '-';
                             @endphp
                             <tr class="border-t border-[#D7DDE5] hover:bg-[#F9FBFF]">
                                 <td class="px-3 py-2 font-semibold text-[#1F4E79]">
@@ -101,7 +106,6 @@
                                     {{ $job->created_at?->format('d M Y H:i') }}
                                 </td>
                                 <td class="px-3 py-2">
-                                    {{ optional(optional($job->room)->block)->campus->campus_name ?? '' }},
                                     {{ optional($job->room->block ?? null)->block_name ?? '' }},
                                     {{ optional($job->room)->room_name ?? '' }}
                                 </td>
@@ -119,6 +123,16 @@
                                         style="background-color: {{ $statusBg }}; color: {{ $statusFg }};">
                                         {{ str_replace('_', ' ', $job->status) }}
                                     </span>
+                                </td>
+                                <td class="px-3 py-2">
+                                    @if ($isOverdue)
+                                        <span class="px-2 py-1 rounded-full text-xs font-semibold inline-block w-full text-center"
+                                            style="background-color:#E74C3C; color:#FFFFFF;">
+                                            Overdue {{ $overdueDuration }}
+                                        </span>
+                                    @else
+                                        <span class="text-xs text-[#7F8C8D]">On track</span>
+                                    @endif
                                 </td>
                                 <td class="px-3 py-2">
                                     {{ $job->due_at?->format('d M Y H:i') ?? '-' }}
