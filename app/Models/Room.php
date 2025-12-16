@@ -11,7 +11,7 @@ class Room extends Model
     /**
      * The primary key for the model.
      */
-    protected $primaryKey = 'room_id';
+    protected $primaryKey = 'id';
 
     /**
      * Indicates if the model should be timestamped.
@@ -32,7 +32,7 @@ class Room extends Model
      */
     public function block(): BelongsTo
     {
-        return $this->belongsTo(Block::class, 'block_id', 'block_id');
+        return $this->belongsTo(Block::class, 'block_id', 'id');
     }
 
     /**
@@ -40,6 +40,6 @@ class Room extends Model
      */
     public function reports(): HasMany
     {
-        return $this->hasMany(Report::class, 'room_id', 'room_id');
+        return $this->hasMany(Report::class, 'room_id', 'id');
     }
 }

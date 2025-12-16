@@ -154,7 +154,7 @@
                 <select id="blockSelect" name="block_id" required>
                     <option value="">Click a building on the map...</option>
                     @foreach($blocks as $block)
-                        <option value="{{ $block->block_id }}" {{ old('block_id') == $block->block_id ? 'selected' : '' }}>
+                        <option value="{{ $block->id }}" {{ old('block_id') == $block->id ? 'selected' : '' }}>
                             {{ $block->block_name }}
                         </option>
                     @endforeach
@@ -750,7 +750,7 @@
                 roomSelect.innerHTML = '<option value="">Select a room...</option>';
                 rooms.forEach(room => {
                     const option = document.createElement('option');
-                    option.value = room.room_id;
+                    option.value = room.id;
                     option.textContent = `Floor ${room.floor_number} - ${room.room_name}`;
                     roomSelect.appendChild(option);
                 });

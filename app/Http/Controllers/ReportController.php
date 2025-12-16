@@ -45,7 +45,7 @@ class ReportController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
-            'room_id' => ['required', 'exists:rooms,room_id'],
+            'room_id' => ['required', 'exists:rooms,id'],
             'category_id' => ['required', 'exists:categories,id'],
             'description' => ['required', 'string', 'max:2000'],
             'urgency' => ['required', 'in:Low,Medium,High'],
@@ -101,7 +101,7 @@ class ReportController extends Controller
      */
     public function getRoomsByBlock(int $blockId)
     {
-        $block = Block::where('block_id', $blockId)->firstOrFail();
+        $block = Block::where('id', $blockId)->firstOrFail();
         $rooms = $block->rooms()->orderBy('floor_number')->orderBy('room_name')->get();
 
         return response()->json($rooms);

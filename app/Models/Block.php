@@ -10,7 +10,7 @@ class Block extends Model
     /**
      * The primary key for the model.
      */
-    protected $primaryKey = 'block_id';
+    protected $primaryKey = 'id';
 
     /**
      * Indicates if the model should be timestamped.
@@ -29,7 +29,7 @@ class Block extends Model
      */
     public function rooms(): HasMany
     {
-        return $this->hasMany(Room::class, 'block_id', 'block_id');
+        return $this->hasMany(Room::class, 'block_id', 'id');
     }
 
     /**
@@ -37,6 +37,6 @@ class Block extends Model
      */
     public function getRouteKeyName(): string
     {
-        return 'block_id';
+        return 'id';
     }
 }
