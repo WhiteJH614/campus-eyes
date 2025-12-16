@@ -16,6 +16,17 @@
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
+        <!-- Reporter Type -->
+        <div class="mt-4">
+            <x-input-label for="reporter_role" :value="__('I am a')" />
+            <select id="reporter_role" name="reporter_role" class="block mt-1 w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm" required>
+                <option value="">{{ __('Select your role...') }}</option>
+                <option value="Student" {{ old('reporter_role') == 'Student' ? 'selected' : '' }}>{{ __('Student') }}</option>
+                <option value="Staff" {{ old('reporter_role') == 'Staff' ? 'selected' : '' }}>{{ __('Staff') }}</option>
+            </select>
+            <x-input-error :messages="$errors->get('reporter_role')" class="mt-2" />
+        </div>
+
         <!-- Password -->
         <div class="mt-4">
             <x-input-label for="password" :value="__('Password')" />
@@ -50,3 +61,4 @@
         </div>
     </form>
 </x-guest-layout>
+
