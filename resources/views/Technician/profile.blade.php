@@ -2,7 +2,6 @@
 
 @php
     $pageTitle = 'Technician Profile';
-    $user = $user ?? Auth::user();
     $specializationOptions = [
         'Electrical' => 'Electrical',
         'Networking' => 'Networking',
@@ -22,51 +21,40 @@
 @endphp
 
 @section('content')
-    <section class="space-y-6">
+    <section class="space-y-6" x-data="profilePage()" x-init="load()">
         <div class="rounded-2xl border border-transparent bg-gradient-to-r from-[#0F172A] via-[#1F4E79] to-[#2A7ABF] text-white p-6 shadow-md">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div class="flex items-center gap-3">
                     <div class="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center text-lg font-semibold">
-                        {{ strtoupper(substr($user?->name ?? 'T', 0, 1)) }}
+                        <span x-text="avatarInitial"></span>
                     </div>
                     <div>
                         <div class="text-sm text-white/80">Technician profile</div>
-                        <h1 class="text-2xl font-semibold">{{ $user?->name ?? 'Technician' }}</h1>
+                        <h1 class="text-2xl font-semibold" x-text="form.name || 'Technician'"></h1>
                         <p class="text-xs text-white/70 mt-1 flex items-center gap-2">
                             <span class="rounded-full px-2 py-0.5 text-[11px] font-semibold" style="background:rgba(255,255,255,0.15);">
-                                {{ $user?->role ?? 'Technician' }}
+                                Technician
                             </span>
-                            <span>Last updated: {{ optional($user?->updated_at)->format('d M Y') ?? '—' }}</span>
+                            <span>Last updated: <span x-text="lastUpdated || '-'"></span></span>
                         </p>
                     </div>
                 </div>
                 <div class="flex flex-wrap gap-3">
                     <div class="rounded-xl bg-white/15 px-4 py-3 min-w-[180px]">
                         <div class="text-xs text-white/80">Contact</div>
-                        <div class="text-sm font-semibold">{{ $user?->email }}</div>
-                        @if($user?->phone_number)
-                            <div class="text-xs text-white/80">{{ $user->phone_number }}</div>
-                        @endif
+                        <div class="text-sm font-semibold" x-text="form.email"></div>
+                        <template x-if="form.phone_number">
+                            <div class="text-xs text-white/80" x-text="form.phone_number"></div>
+                        </template>
                     </div>
                     <div class="rounded-xl bg-white/15 px-4 py-3 min-w-[160px]">
                         <div class="text-xs text-white/80">Campus</div>
-                        <div class="text-sm font-semibold">{{ $user?->campus ?: 'Not set' }}</div>
-                        <div class="text-xs text-white/70">Availability: {{ str_replace('_',' ', $user?->availability_status ?? 'Not set') }}</div>
+                        <div class="text-sm font-semibold" x-text="form.campus || 'Not set'"></div>
+                        <div class="text-xs text-white/70">Availability: <span x-text="availabilityText"></span></div>
                     </div>
                 </div>
             </div>
         </div>
-
-        @php
-            $phoneDigits = '';
-            if (!empty($user?->phone_number)) {
-                $phoneDigits = preg_replace('/^\\+60/', '', $user->phone_number);
-            }
-            $selectedSpecializations = collect(explode(',', $user->specialization ?? ''))
-                ->filter()
-                ->values()
-                ->all();
-        @endphp
 
         <div class="grid gap-6 lg:grid-cols-3">
             <div class="lg:col-span-2 rounded-2xl shadow-sm border border-[#D7DDE5] bg-white p-6">
@@ -77,16 +65,15 @@
                     </div>
                     <span class="text-[11px] px-2 py-1 rounded-full" style="background:#F5F7FA;color:#1F4E79;">Tech</span>
                 </div>
-                <form action="{{ route('technician.profile.update') }}" method="post" class="space-y-4">
-                    @csrf
+                <form class="space-y-4" @submit.prevent="saveProfile">
                     <div class="grid sm:grid-cols-2 gap-4">
                         <div class="space-y-2">
                             <label for="name" class="text-sm font-medium text-[#2C3E50]">Full Name</label>
-                            <input id="name" name="name" type="text" value="{{ old('name', $user?->name) }}" class="w-full rounded-lg px-3 py-2 border" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;" required>
+                            <input id="name" name="name" type="text" x-model="form.name" class="w-full rounded-lg px-3 py-2 border" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;" required>
                         </div>
                         <div class="space-y-2">
                             <label for="email" class="text-sm font-medium text-[#2C3E50]">Email</label>
-                            <input id="email" name="email" type="email" value="{{ old('email', $user?->email) }}" class="w-full rounded-lg px-3 py-2 border" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;" required>
+                            <input id="email" name="email" type="email" x-model="form.email" class="w-full rounded-lg px-3 py-2 border" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;" required>
                         </div>
                     </div>
 
@@ -103,7 +90,7 @@
                                     inputmode="numeric"
                                     pattern="[0-9]{9,11}"
                                     title="Enter 9-11 digits (a leading 0 will be removed automatically)"
-                                    value="{{ old('phone_number_digits', $phoneDigits) }}"
+                                    x-model="form.phone_number_digits"
                                     class="flex-1 px-3 py-2.5 text-sm focus:outline-none border-none"
                                     style="color:#2C3E50;background:transparent;"
                                 >
@@ -112,9 +99,9 @@
 
                         <div class="space-y-2">
                             <label for="campus" class="text-sm font-medium text-[#2C3E50]">Campus</label>
-                            <select id="campus" name="campus" class="w-full rounded-lg px-3 py-2 border" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;">
-                                <option value="" @selected(old('campus', $user?->campus) === null || old('campus', $user?->campus) === '')>Select campus</option>
-                                <option value="Penang" @selected(old('campus', $user?->campus) === 'Penang')>Penang</option>
+                            <select id="campus" name="campus" x-model="form.campus" class="w-full rounded-lg px-3 py-2 border" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;">
+                                <option value="">Select campus</option>
+                                <option value="Penang">Penang</option>
                             </select>
                         </div>
 
@@ -129,26 +116,18 @@
                             <select
                                 id="availability_status"
                                 name="availability_status"
+                                x-model="form.availability_status"
                                 class="w-full rounded-lg px-3 py-2 border bg-white focus:outline-none focus:ring-2 focus:ring-[#1F4E79]/40 focus:border-[#1F4E79]"
                                 style="border-color:#D7DDE5;color:#2C3E50;"
                             >
                                 <option value="">Select status</option>
-                                @foreach (['Available', 'Busy', 'On_Leave'] as $opt)
-                                    <option value="{{ $opt }}" @selected(old('availability_status', $user?->availability_status) === $opt)>{{ str_replace('_', ' ', $opt) }}</option>
-                                @endforeach
+                                <option value="Available">Available</option>
+                                <option value="Busy">Busy</option>
+                                <option value="On_Leave">On Leave</option>
                             </select>
-                            @php
-                                $badgeColors = [
-                                    'Available' => ['bg' => '#E8F6F3', 'text' => '#1E6653'],
-                                    'Busy' => ['bg' => '#FFF4E5', 'text' => '#C27B12'],
-                                    'On_Leave' => ['bg' => '#FCE8E6', 'text' => '#B23B3B'],
-                                ];
-                                $currentStatus = old('availability_status', $user?->availability_status);
-                                $colors = $badgeColors[$currentStatus] ?? ['bg' => '#F5F7FA', 'text' => '#2C3E50'];
-                            @endphp
-                            <div class="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full" style="background:{{ $colors['bg'] }};color:{{ $colors['text'] }};">
-                                <span class="inline-block h-2 w-2 rounded-full" style="background:{{ $colors['text'] }};"></span>
-                                {{ $currentStatus ? str_replace('_',' ', $currentStatus) : 'Not set' }}
+                            <div class="inline-flex items-center gap-2 text-xs font-semibold px-3 py-1 rounded-full" :style="badgeStyle">
+                                <span class="inline-block h-2 w-2 rounded-full" :style="dotStyle"></span>
+                                <span x-text="availabilityText"></span>
                             </div>
                         </div>
                     </div>
@@ -163,7 +142,7 @@
                                         type="checkbox"
                                         name="specialization[]"
                                         value="{{ $value }}"
-                                        @checked(in_array($value, old('specialization', $selectedSpecializations), true))
+                                        x-model="form.specialization"
                                         class="accent-[#1F4E79] h-4 w-4"
                                     >
                                     <span>{{ $label }}</span>
@@ -176,30 +155,140 @@
                     <div class="flex justify-end gap-2">
                         <button type="submit" class="rounded-lg px-4 py-2 font-semibold" style="background:#1F4E79;color:#FFFFFF;">Save profile</button>
                     </div>
+                    <div class="text-xs" :class="saveMessageClass" x-text="saveMessage"></div>
                 </form>
             </div>
 
             <div class="rounded-2xl shadow-sm border border-[#D7DDE5] bg-white p-6">
                 <h2 class="text-lg font-semibold mb-3 text-[#2C3E50]">Change password</h2>
-                <form action="{{ route('technician.profile.password') }}" method="post" class="space-y-4">
-                    @csrf
+                <form class="space-y-4" @submit.prevent="savePassword">
                     <div class="space-y-2">
                         <label for="current_password" class="text-sm font-medium text-[#2C3E50]">Current Password</label>
-                        <input id="current_password" name="current_password" type="password" class="w-full rounded-lg px-3 py-2 border" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;" required>
+                        <input id="current_password" type="password" x-model="passwordForm.current_password" class="w-full rounded-lg px-3 py-2 border" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;" required>
                     </div>
                     <div class="space-y-2">
                         <label for="new_password" class="text-sm font-medium text-[#2C3E50]">New Password</label>
-                        <input id="new_password" name="new_password" type="password" class="w-full rounded-lg px-3 py-2 border" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;" required>
+                        <input id="new_password" type="password" x-model="passwordForm.new_password" class="w-full rounded-lg px-3 py-2 border" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;" required>
                     </div>
                     <div class="space-y-2">
                         <label for="new_password_confirmation" class="text-sm font-medium text-[#2C3E50]">Confirm New Password</label>
-                        <input id="new_password_confirmation" name="new_password_confirmation" type="password" class="w-full rounded-lg px-3 py-2 border" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;" required>
+                        <input id="new_password_confirmation" type="password" x-model="passwordForm.new_password_confirmation" class="w-full rounded-lg px-3 py-2 border" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;" required>
                     </div>
                     <div class="flex justify-end gap-2">
                         <button type="submit" class="rounded-lg px-4 py-2 font-semibold" style="background:#1F4E79;color:#FFFFFF;">Update password</button>
                     </div>
+                    <div class="text-xs" :class="pwMessageClass" x-text="pwMessage"></div>
                 </form>
             </div>
         </div>
     </section>
+
+    <script>
+        function profilePage() {
+            return {
+                form: {
+                    name: '',
+                    email: '',
+                    phone_number: null,
+                    phone_number_digits: '',
+                    campus: '',
+                    specialization: [],
+                    availability_status: '',
+                },
+                passwordForm: {
+                    current_password: '',
+                    new_password: '',
+                    new_password_confirmation: '',
+                },
+                lastUpdated: '',
+                saveMessage: '',
+                saveMessageClass: '',
+                pwMessage: '',
+                pwMessageClass: '',
+                get avatarInitial() {
+                    return (this.form.name || 'T').slice(0, 1).toUpperCase();
+                },
+                get availabilityText() {
+                    return this.form.availability_status ? this.form.availability_status.replace('_', ' ') : 'Not set';
+                },
+                get badgeStyle() {
+                    const map = {
+                        'Available': ['#E8F6F3', '#1E6653'],
+                        'Busy': ['#FFF4E5', '#C27B12'],
+                        'On_Leave': ['#FCE8E6', '#B23B3B'],
+                    };
+                    const [bg, text] = map[this.form.availability_status] || ['#F5F7FA', '#2C3E50'];
+                    return `background:${bg};color:${text};`;
+                },
+                get dotStyle() {
+                    const map = {
+                        'Available': '#1E6653',
+                        'Busy': '#C27B12',
+                        'On_Leave': '#B23B3B',
+                    };
+                    const color = map[this.form.availability_status] || '#2C3E50';
+                    return `background:${color};`;
+                },
+                async load() {
+                    try {
+                        const res = await fetch('/api/tech/profile', { credentials: 'same-origin' });
+                        if (!res.ok) throw new Error('Failed to load profile');
+                        const json = await res.json();
+                        const data = json.data || {};
+                        this.form.name = data.name || '';
+                        this.form.email = data.email || '';
+                        this.form.phone_number = data.phone_number || '';
+                        this.form.phone_number_digits = (data.phone_number || '').replace(/^\+60/, '');
+                        this.form.campus = data.campus || '';
+                        this.form.specialization = data.specialization ? data.specialization.split(',').filter(Boolean) : [];
+                        this.form.availability_status = data.availability_status || '';
+                        this.lastUpdated = data.updated_at ? new Date(data.updated_at).toLocaleDateString() : '-';
+                    } catch (e) {
+                        console.error(e);
+                        this.saveMessage = 'Failed to load profile';
+                        this.saveMessageClass = 'text-red-600';
+                    }
+                },
+                async saveProfile() {
+                    this.saveMessage = '';
+                    const payload = {
+                        ...this.form,
+                    };
+                    const res = await fetch('/api/tech/profile', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content },
+                        credentials: 'same-origin',
+                        body: JSON.stringify(payload),
+                    });
+                    if (res.ok) {
+                        this.saveMessage = 'Profile updated.';
+                        this.saveMessageClass = 'text-green-600';
+                    } else {
+                        const err = await res.json().catch(() => ({}));
+                        this.saveMessage = err.message || 'Failed to update profile';
+                        this.saveMessageClass = 'text-red-600';
+                    }
+                },
+                async savePassword() {
+                    this.pwMessage = '';
+                    const res = await fetch('/api/tech/profile/password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content },
+                        credentials: 'same-origin',
+                        body: JSON.stringify(this.passwordForm),
+                    });
+                    if (res.ok) {
+                        this.pwMessage = 'Password updated.';
+                        this.pwMessageClass = 'text-green-600';
+                        this.passwordForm = { current_password: '', new_password: '', new_password_confirmation: '' };
+                    } else {
+                        const err = await res.json().catch(() => ({}));
+                        const msg = err.errors ? Object.values(err.errors).flat().join(' ') : (err.message || 'Failed to update password');
+                        this.pwMessage = msg;
+                        this.pwMessageClass = 'text-red-600';
+                    }
+                },
+            };
+        }
+    </script>
 @endsection

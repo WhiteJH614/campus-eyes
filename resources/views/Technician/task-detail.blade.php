@@ -74,7 +74,8 @@
                         <template x-if="afterPhotos.length > 0">
                             <div class="aspect-video flex items-center justify-center relative">
                                 <img :src="afterPhotos[currentAfterIndex]?.url || ''" alt="Technician proof"
-                                    class="h-full w-full object-cover">
+                                    class="h-full w-full object-cover cursor-zoom-in"
+                                    @click="openLightbox(afterPhotos.map(p=>p.url), currentAfterIndex)">
                             </div>
                         </template>
                         <template x-if="afterPhotos.length === 0">
@@ -86,7 +87,7 @@
                         <template x-if="afterPhotos.length > 1">
                             <button type="button"
                                 class="absolute left-3 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full font-bold shadow-lg"
-                                style="background:rgba(31,78,121,0.92);color:#FFFFFF;border:2px solid #1F4E79;"
+                                style="background:#FFFFFF;color:#1F4E79;border:2px solid #1F4E79;"
                                 @click="prevAfter">
                                 ‹
                             </button>
@@ -94,7 +95,7 @@
                         <template x-if="afterPhotos.length > 1">
                             <button type="button"
                                 class="absolute right-3 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full font-bold shadow-lg"
-                                style="background:rgba(31,78,121,0.92);color:#FFFFFF;border:2px solid #1F4E79;"
+                                style="background:#FFFFFF;color:#1F4E79;border:2px solid #1F4E79;"
                                 @click="nextAfter">
                                 ›
                             </button>
@@ -217,14 +218,15 @@
 
                                     <!-- Preview grid -->
                                     <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                                        <template x-for="(url, idx) in proofPreviewUrls" :key="idx">
-                                            <div class="border rounded-lg overflow-hidden"
-                                                style="border-color:#D7DDE5;background:#F5F7FA;aspect-ratio:4/3;">
-                                                <img :src="url" alt="After repair preview"
-                                                    class="w-full h-full object-cover">
-                                            </div>
-                                        </template>
-                                    </div>
+                            <template x-for="(url, idx) in proofPreviewUrls" :key="idx">
+                                <div class="border rounded-lg overflow-hidden"
+                                    style="border-color:#D7DDE5;background:#F5F7FA;aspect-ratio:4/3;">
+                                    <img :src="url.url" alt="After repair preview"
+                                        class="w-full h-full object-cover cursor-zoom-in"
+                                        @click="openLightbox(proofPreviewUrls, idx)">
+                                </div>
+                            </template>
+                        </div>
 
                                     <p class="text-xs" style="color:#000000;">Required when closing the task. Stored as
                                         technician proof.</p>
@@ -267,6 +269,42 @@
                 </div>
             </div>
         </div>
+        <!-- Lightbox for zoomed images -->
+        <div x-show="showLightbox" x-cloak
+            class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+            @click.self="closeLightbox()" @keyup.escape.window="closeLightbox()">
+            <div class="relative max-w-5xl w-[90%] bg-white rounded-xl shadow-2xl p-4">
+                <button type="button"
+                    class="absolute -top-3 -right-3 h-10 w-10 rounded-full bg-white shadow-lg border font-bold"
+                    style="color:#1F4E79;border-color:#D7DDE5;"
+                    @click="closeLightbox()">
+                    ×
+                </button>
+                <div class="relative">
+                    <img :src="lightboxList[lightboxIndex]?.url" alt="Preview" class="w-full max-h-[80vh] object-contain rounded-lg">
+                    <!-- <div class="absolute left-3 bottom-3 px-3 py-1 rounded-md text-xs font-semibold"
+                        style="background:rgba(0,0,0,0.65);color:#FFFFFF;">
+                        <span x-text="lightboxList[lightboxIndex]?.label ? ('Uploaded at ' + lightboxList[lightboxIndex].label) : 'Uploaded at N/A'"></span>
+                    </div> -->
+                    <template x-if="lightboxList.length > 1">
+                        <button type="button"
+                            class="absolute left-0 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/90 border font-bold shadow-lg"
+                            style="color:#1F4E79;border-color:#D7DDE5;"
+                            @click.stop="prevLightbox()">
+                            ‹
+                        </button>
+                    </template>
+                    <template x-if="lightboxList.length > 1">
+                        <button type="button"
+                            class="absolute right-0 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/90 border font-bold shadow-lg"
+                            style="color:#1F4E79;border-color:#D7DDE5;"
+                            @click.stop="nextLightbox()">
+                            ›
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
     </section>
     <script>
         function taskDetailPage(jobId) {
@@ -276,6 +314,9 @@
                 beforePhoto: null,
                 afterPhotos: [],
                 currentAfterIndex: 0,
+                showLightbox: false,
+                lightboxList: [],
+                lightboxIndex: 0,
 
                 // ====== NEW: local preview (before submit) ======
                 proofPreviewUrls: [],
@@ -283,12 +324,16 @@
                     const files = e.target.files || [];
 
                     // revoke old urls to avoid memory leak
-                    this.proofPreviewUrls.forEach(u => URL.revokeObjectURL(u));
+                    this.proofPreviewUrls.forEach(u => URL.revokeObjectURL(u.url));
                     this.proofPreviewUrls = [];
 
                     Array.from(files).forEach(file => {
                         if (!file.type.startsWith('image/')) return;
-                        this.proofPreviewUrls.push(URL.createObjectURL(file));
+                        this.proofPreviewUrls.push({
+                            url: URL.createObjectURL(file),
+                            uploaded_at: null,
+                            label: 'Local preview',
+                        });
                     });
                 },
 
@@ -311,6 +356,35 @@
                 },
                 prevAfter() {
                     this.currentAfterIndex = (this.currentAfterIndex - 1 + this.afterPhotos.length) % this.afterPhotos.length;
+                },
+                openLightbox(list, index = 0) {
+                    const arr = Array.isArray(list) ? list.filter(Boolean) : [];
+                    if (!arr.length) return;
+                    // normalize to objects with url + label
+                    this.lightboxList = arr.map(item => {
+                        if (typeof item === 'string') return { url: item, label: '' };
+                        return {
+                            url: item.url || '',
+                            label: item.uploaded_at
+                                ? new Date(item.uploaded_at).toLocaleString()
+                                : (item.label || ''),
+                        };
+                    }).filter(i => i.url);
+                    this.lightboxIndex = Math.min(Math.max(index, 0), this.lightboxList.length - 1);
+                    this.showLightbox = true;
+                },
+                nextLightbox() {
+                    if (!this.lightboxList.length) return;
+                    this.lightboxIndex = (this.lightboxIndex + 1) % this.lightboxList.length;
+                },
+                prevLightbox() {
+                    if (!this.lightboxList.length) return;
+                    this.lightboxIndex = (this.lightboxIndex - 1 + this.lightboxList.length) % this.lightboxList.length;
+                },
+                closeLightbox() {
+                    this.showLightbox = false;
+                    this.lightboxList = [];
+                    this.lightboxIndex = 0;
                 },
 
                 async load() {
@@ -336,6 +410,7 @@
                         this.afterPhotos = (data.attachments?.technician_proofs || []).map(p => ({
                             id: p.id ?? 0,
                             url: p.url,
+                            uploaded_at: p.uploaded_at || null,
                         }));
                         this.currentAfterIndex = 0;
 
