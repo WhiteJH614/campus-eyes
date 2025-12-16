@@ -316,9 +316,9 @@ class TechnicianController extends Controller
             ];
         })->toArray();
 
-        $total = $reports->total();
-        $highUrgency = $reports->where('urgency', 'High')->count();
-        $avgSeconds = $reports->filter(fn($r) => $r->assigned_at && $r->completed_at)
+        $total = $paginated->total();
+        $highUrgency = $reportsCollection->where('urgency', 'High')->count();
+        $avgSeconds = $reportsCollection->filter(fn($r) => $r->assigned_at && $r->completed_at)
             ->map(fn($r) => $r->assigned_at->diffInSeconds($r->completed_at))
             ->avg();
         $avgTime = $avgSeconds
