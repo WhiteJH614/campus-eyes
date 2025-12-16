@@ -16,20 +16,25 @@
                     </h1>
                     <p class="text-sm" style="color:#000000;">Technician view and actions.</p>
                 </div>
-                <div class="flex flex-wrap gap-2 text-sm">
-                    <span class=" px-3 py-1 rounded-full font-semibold" :style="chipStyle(urgencyChip.bg, urgencyChip.fg)"
-                        x-text="urgencyChip.label"></span>
-                    <span class="px-3 py-1 rounded-full font-semibold" :style="chipStyle(statusChip.bg, statusChip.fg)"
-                        x-text="statusChip.label"></span>
-                    <template x-if="job.due_at">
-                        <span class="px-3 py-1 rounded-full font-semibold" style="background-color:#F1C40F;color:#000000;">
-                            Due: <span x-text="job.due_at"></span>
-                        </span>
-                    </template>
-                </div>
+            <div class="flex flex-wrap gap-2 text-sm">
+                <span class=" px-3 py-1 rounded-full font-semibold" :style="chipStyle(urgencyChip.bg, urgencyChip.fg)"
+                    x-text="urgencyChip.label"></span>
+                <span class="px-3 py-1 rounded-full font-semibold" :style="chipStyle(statusChip.bg, statusChip.fg)"
+                    x-text="statusChip.label"></span>
+                <template x-if="job.status === 'Completed' && job.completed_at">
+                    <span class="px-3 py-1 rounded-full font-semibold" style="background-color:#27AE60;color:#FFFFFF;">
+                        Completed at: <span x-text="job.completed_at"></span>
+                    </span>
+                </template>
+                <template x-if="job.status !== 'Completed' && job.due_at">
+                    <span class="px-3 py-1 rounded-full font-semibold" style="background-color:#F1C40F;color:#000000;">
+                        Due: <span x-text="job.due_at"></span>
+                    </span>
+                </template>
             </div>
+        </div>
 
-            <div class="grid gap-4 sm:grid-cols-2">
+        <div class="grid gap-4 sm:grid-cols-2">
                 <div class="space-y-2">
                     <div class="text-sm font-semibold" style="color:#000000;">Location</div>
                     <div style="color:#000000;" x-text="job.location || '-'"></div>
@@ -41,10 +46,6 @@
                 <div class="space-y-2">
                     <div class="text-sm font-semibold" style="color:#000000;">Reported at</div>
                     <div style="color:#000000;" x-text="job.reported_at || '-'"></div>
-                </div>
-                <div class="space-y-2">
-                    <div class="text-sm font-semibold" style="color:#000000;">Assigned at</div>
-                    <div style="color:#000000;" x-text="job.assigned_at || '-'"></div>
                 </div>
             </div>
 
@@ -75,7 +76,7 @@
                             <div class="aspect-video flex items-center justify-center relative">
                                 <img :src="afterPhotos[currentAfterIndex]?.url || ''" alt="Technician proof"
                                     class="h-full w-full object-cover cursor-zoom-in"
-                                    @click="openLightbox(afterPhotos.map(p=>p.url), currentAfterIndex)">
+                                    @click="openLightbox(afterPhotos, currentAfterIndex)">
                             </div>
                         </template>
                         <template x-if="afterPhotos.length === 0">
@@ -87,16 +88,14 @@
                         <template x-if="afterPhotos.length > 1">
                             <button type="button"
                                 class="absolute left-3 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full font-bold shadow-lg"
-                                style="background:#FFFFFF;color:#1F4E79;border:2px solid #1F4E79;"
-                                @click="prevAfter">
+                                style="background:#FFFFFF;color:#1F4E79;border:2px solid #1F4E79;" @click="prevAfter">
                                 ‹
                             </button>
                         </template>
                         <template x-if="afterPhotos.length > 1">
                             <button type="button"
                                 class="absolute right-3 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full font-bold shadow-lg"
-                                style="background:#FFFFFF;color:#1F4E79;border:2px solid #1F4E79;"
-                                @click="nextAfter">
+                                style="background:#FFFFFF;color:#1F4E79;border:2px solid #1F4E79;" @click="nextAfter">
                                 ›
                             </button>
                         </template>
@@ -118,21 +117,18 @@
                                 onsubmit="return confirm('Remove this photo?');">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit"
-                                    class="px-4 py-2 rounded-lg text-xs font-semibold shadow-sm"
+                                <button type="submit" class="px-4 py-2 rounded-lg text-xs font-semibold shadow-sm"
                                     style="background:linear-gradient(135deg,#fce4e4,#f8d7da);color:#c0392b;border:1px solid #f5c6cb;">
                                     Remove image
                                 </button>
                             </form>
                         </template>
-                        <form x-ref="addProofForm" method="post"
-                            :action="`/technician/tasks/${jobId}/proofs`" enctype="multipart/form-data"
-                            class="flex items-center gap-2">
+                        <form x-ref="addProofForm" method="post" :action="`/technician/tasks/${jobId}/proofs`"
+                            enctype="multipart/form-data" class="flex items-center gap-2">
                             @csrf
                             <input type="file" name="proof_images[]" accept="image/*" multiple class="hidden"
                                 x-ref="addProofInput" @change="$refs.addProofForm.submit()">
-                            <button type="button"
-                                class="px-4 py-2 rounded-lg text-xs font-semibold shadow-sm"
+                            <button type="button" class="px-4 py-2 rounded-lg text-xs font-semibold shadow-sm"
                                 style="background:linear-gradient(135deg,#e8f4ff,#d6e9ff);color:#1f4e79;border:1px solid #b6d4fe;"
                                 @click.prevent="$refs.addProofInput.click()">
                                 Add more images
@@ -218,15 +214,15 @@
 
                                     <!-- Preview grid -->
                                     <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                            <template x-for="(url, idx) in proofPreviewUrls" :key="idx">
-                                <div class="border rounded-lg overflow-hidden"
-                                    style="border-color:#D7DDE5;background:#F5F7FA;aspect-ratio:4/3;">
-                                    <img :src="url.url" alt="After repair preview"
-                                        class="w-full h-full object-cover cursor-zoom-in"
-                                        @click="openLightbox(proofPreviewUrls, idx)">
-                                </div>
-                            </template>
-                        </div>
+                                        <template x-for="(url, idx) in proofPreviewUrls" :key="idx">
+                                            <div class="border rounded-lg overflow-hidden"
+                                                style="border-color:#D7DDE5;background:#F5F7FA;aspect-ratio:4/3;">
+                                                <img :src="url.url" alt="After repair preview"
+                                                    class="w-full h-full object-cover cursor-zoom-in"
+                                                    @click="openLightbox(proofPreviewUrls, idx)">
+                                            </div>
+                                        </template>
+                                    </div>
 
                                     <p class="text-xs" style="color:#000000;">Required when closing the task. Stored as
                                         technician proof.</p>
@@ -270,35 +266,34 @@
             </div>
         </div>
         <!-- Lightbox for zoomed images -->
-        <div x-show="showLightbox" x-cloak
-            class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+        <div x-show="showLightbox" x-cloak class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
             @click.self="closeLightbox()" @keyup.escape.window="closeLightbox()">
             <div class="relative max-w-5xl w-[90%] bg-white rounded-xl shadow-2xl p-4">
                 <button type="button"
                     class="absolute -top-3 -right-3 h-10 w-10 rounded-full bg-white shadow-lg border font-bold"
-                    style="color:#1F4E79;border-color:#D7DDE5;"
-                    @click="closeLightbox()">
+                    style="color:#1F4E79;border-color:#D7DDE5;" @click="closeLightbox()">
                     ×
                 </button>
                 <div class="relative">
-                    <img :src="lightboxList[lightboxIndex]?.url" alt="Preview" class="w-full max-h-[80vh] object-contain rounded-lg">
-                    <!-- <div class="absolute left-3 bottom-3 px-3 py-1 rounded-md text-xs font-semibold"
+                    <img :src="lightboxList[lightboxIndex]?.url" alt="Preview"
+                        class="w-full max-h-[80vh] object-contain rounded-lg">
+                    <div class="absolute left-3 bottom-3 px-3 py-1 rounded-md text-xs font-semibold"
                         style="background:rgba(0,0,0,0.65);color:#FFFFFF;">
-                        <span x-text="lightboxList[lightboxIndex]?.label ? ('Uploaded at ' + lightboxList[lightboxIndex].label) : 'Uploaded at N/A'"></span>
-                    </div> -->
+                        <span x-text="lightboxList[lightboxIndex]?.label
+                                ? ('Uploaded at ' + lightboxList[lightboxIndex].label)
+                                : 'Uploaded at N/A'"></span>
+                    </div>
                     <template x-if="lightboxList.length > 1">
                         <button type="button"
                             class="absolute left-0 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/90 border font-bold shadow-lg"
-                            style="color:#1F4E79;border-color:#D7DDE5;"
-                            @click.stop="prevLightbox()">
+                            style="color:#1F4E79;border-color:#D7DDE5;" @click.stop="prevLightbox()">
                             ‹
                         </button>
                     </template>
                     <template x-if="lightboxList.length > 1">
                         <button type="button"
                             class="absolute right-0 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-white/90 border font-bold shadow-lg"
-                            style="color:#1F4E79;border-color:#D7DDE5;"
-                            @click.stop="nextLightbox()">
+                            style="color:#1F4E79;border-color:#D7DDE5;" @click.stop="nextLightbox()">
                             ›
                         </button>
                     </template>
@@ -394,17 +389,17 @@
                         const json = await res.json();
                         const data = json.data || {};
 
-                        this.job = {
-                            id: data.id,
-                            description: data.description,
-                            urgency: data.urgency,
-                            status: data.status_value, // must match 'In_Progress' / 'Completed' / etc.
-                            reported_at: data.reported_at ? new Date(data.reported_at).toLocaleString() : '-',
-                            assigned_at: data.assigned_at ? new Date(data.assigned_at).toLocaleString() : '-',
-                            due_at: data.due_at ? new Date(data.due_at).toLocaleString() : '-',
-                            location: [data.location?.campus, data.location?.block, data.location?.room].filter(Boolean).join(', '),
-                            category: data.category,
-                        };
+                this.job = {
+                    id: data.id,
+                    description: data.description,
+                    urgency: data.urgency,
+                    status: data.status_value, // must match 'In_Progress' / 'Completed' / etc.
+                    reported_at: data.reported_at ? new Date(data.reported_at).toLocaleString() : '-',
+                    due_at: data.due_at ? new Date(data.due_at).toLocaleString() : '-',
+                    completed_at: data.completed_at ? new Date(data.completed_at).toLocaleString() : null,
+                    location: [data.location?.campus, data.location?.block, data.location?.room].filter(Boolean).join(', '),
+                    category: data.category,
+                };
 
                         this.beforePhoto = data.attachments?.reporter_proof || null;
                         this.afterPhotos = (data.attachments?.technician_proofs || []).map(p => ({

@@ -122,7 +122,7 @@
                     </tbody>
                 </table>
 
-                <div class="mt-4 flex items-center gap-3" x-show="pagination.total > 0">
+            <div class="mt-4 flex items-center gap-3 justify-end" x-show="pagination.total > 0">
                     <button class="px-3 py-1 rounded border border-[#D7DDE5] text-sm"
                         :disabled="pagination.current_page <= 1"
                         @click="changePage(pagination.current_page - 1)">

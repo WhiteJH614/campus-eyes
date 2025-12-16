@@ -15,24 +15,34 @@
 @endphp
 
 @section('content')
-    <section class="space-y-6" x-data="completedPage()" x-init="load()">
-        <div class="rounded-2xl shadow-sm border border-[#D7DDE5] bg-white p-6 space-y-6">
-            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <section class="space-y-4" x-data="completedPage()" x-init="load()">
+        <div class="rounded-2xl shadow-sm border border-[#D7DDE5] bg-white p-4 space-y-4">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 class="text-2xl font-semibold text-[#2C3E50]">Completed Tasks</h1>
                     <p class="text-sm text-[#7F8C8D]">All tasks you've closed, with filters and history.</p>
                 </div>
             </div>
 
-            <div class="grid gap-4 sm:grid-cols-3">
-                <div class="rounded-2xl border border-transparent bg-gradient-to-r from-[#1F4E79] to-[#3498DB] p-5 text-white shadow">
+            <div class="grid gap-3 sm:grid-cols-3">
+                <div class="rounded-2xl border border-transparent bg-gradient-to-r from-[#1F4E79] to-[#3498DB] p-4 text-white shadow">
                     <div class="text-sm opacity-80">Completed tasks</div>
-                    <div class="text-3xl font-semibold mt-1" x-text="summary.total"></div>
+                    <div class="text-2xl font-semibold mt-1" x-text="summary.total"></div>
                     <p class="text-xs opacity-80 mt-2">Total jobs closed in the selected window.</p>
+                </div>
+                <div class="rounded-2xl border border-[#D7DDE5] bg-gradient-to-r from-[#27AE60] to-[#2ECC71] p-4 text-white shadow">
+                    <div class="text-sm opacity-80">High urgency</div>
+                    <div class="text-2xl font-semibold mt-1" x-text="summary.high_urgency || 0"></div>
+                    <p class="text-xs opacity-80 mt-2">Closed high urgency tasks.</p>
+                </div>
+                <div class="rounded-2xl border border-[#D7DDE5] bg-gradient-to-r from-[#34495E] to-[#2C3E50] p-4 text-white shadow">
+                    <div class="text-sm opacity-80">Avg completion time</div>
+                    <div class="text-2xl font-semibold mt-1" x-text="summary.avg_time || '-'"></div>
+                    <p class="text-xs opacity-80 mt-2">Time spent per task (avg).</p>
                 </div>
             </div>
 
-            <form class="grid gap-3 lg:grid-cols-5 items-center rounded-xl bg-[#F8FBFF] border border-[#D7DDE5] p-4 shadow-sm" @submit.prevent="load">
+            <form class="grid gap-3 lg:grid-cols-5 items-center rounded-xl bg-[#F8FBFF] border border-[#D7DDE5] p-3 shadow-sm" @submit.prevent="load">
                 <input type="date" x-model="filters.from" class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]" />
                 <input type="date" x-model="filters.to" class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]" />
                 <select x-model="filters.category" class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]">
@@ -107,7 +117,7 @@
                 </table>
             </div>
 
-            <div class="mt-4 flex items-center gap-3" x-show="pagination.total > 0">
+            <div class="mt-4 flex items-center gap-3 justify-end" x-show="pagination.total > 0">
                 <button class="px-3 py-1 rounded border border-[#D7DDE5] text-sm"
                     :disabled="pagination.current_page <= 1"
                     @click="changePage(pagination.current_page - 1)">

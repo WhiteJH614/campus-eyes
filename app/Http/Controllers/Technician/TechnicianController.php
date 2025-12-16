@@ -311,9 +311,10 @@ class TechnicianController extends Controller
 
         $total = $paginated->total();
         $highUrgency = $reportsCollection->where('urgency', 'High')->count();
-        $avgSeconds = $reportsCollection->filter(fn($r) => $r->assigned_at && $r->completed_at)
-            ->map(fn($r) => $r->assigned_at->diffInSeconds($r->completed_at))
-            ->avg();
+        $avgSeconds = $reportsCollection->map(function ($r) {
+            $start = $r->assigned_at ?? $r->created_at;
+            return ($start && $r->completed_at) ? $start->diffInSeconds($r->completed_at) : null;
+        })->filter()->avg();
         $avgTime = $avgSeconds
             ? sprintf('%dh %02dm', floor($avgSeconds / 3600), floor($avgSeconds % 3600 / 60))
             : '-';
@@ -634,6 +635,7 @@ class TechnicianController extends Controller
                 'reported_at' => optional($job->created_at)->toIso8601String(),
                 'assigned_at' => optional($job->assigned_at)->toIso8601String(),
                 'due_at' => optional($job->due_at)->toIso8601String(),
+                'completed_at' => optional($job->completed_at)->toIso8601String(),
                 'location' => [
                     'campus' => optional(optional(optional($job->room)->block)->campus)->campus_name,
                     'block' => optional($job->room->block ?? null)->block_name,
