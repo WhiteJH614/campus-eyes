@@ -1,276 +1,243 @@
 @extends('layouts.app')
 
 @php
-/** @var \App\Models\Report $job */
-
-$pageTitle = 'Task Detail';
-$ticketLabel = 'Report ID ' . $job->id;
-
-$locationText = trim(
-    ($job->room->block->campus->campus_name ?? '') . ', ' .
-    ($job->room->block->block_name ?? '') . ', ' .
-    ($job->room->room_name ?? '')
-    ,
-    ' ,'
-);
-
-$urgency = $job->urgency ?? 'Medium';
-$status = $job->status ?? 'Assigned';
-$isInProgress = $status === 'In_Progress';
-$isCompleted = $status === 'Completed';
-
-$urgencyChip = match (strtolower($urgency)) {
-    'high' => ['High urgency', '#E74C3C', '#FFFFFF'],
-    'low' => ['Low urgency', '#2ECC71', '#FFFFFF'],
-    default => ['Medium urgency', '#F1C40F', '#2C3E50'],
-};
-
-$statusChip = match ($status) {
-    'In_Progress' => ['In Progress', '#3498DB', '#FFFFFF'],
-    'Completed' => ['Completed', '#27AE60', '#FFFFFF'],
-    'Escalated' => ['Escalated', '#E74C3C', '#FFFFFF'],
-    default => [$status, '#F39C12', '#FFFFFF'],
-};
-
-// Attachments
-$beforePhotoPath = optional(
-    $job->attachments->firstWhere('attachment_type', 'REPORTER_PROOF')
-)->file_path;
-
-$afterList = ($afterPhotos ?? collect())
-    ->map(fn($a) => ['id' => $a->id, 'url' => asset('storage/' . $a->file_path)])
-    ->values()
-    ->toArray();
+    $pageTitle = 'Task Detail';
+    $jobId = request()->route('id') ?? ($job->id ?? null);
 @endphp
 
 @section('content')
-    <section class="space-y-6">
+    <section class="space-y-6" x-data="taskDetailPage({{ (int) $jobId }})" x-init="load()">
         {{-- Top card: basic info --}}
         <div class="rounded-2xl shadow-sm border p-6" style="background:#FFFFFF;border-color:#D7DDE5;">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
                 <div>
-                    <h1 class="text-2xl font-semibold" style="color:#2C3E50;">
-                        {{ $ticketLabel }}
+                    <h1 class="text-2xl font-semibold" style="color:#000000;">
+                        Report ID <span x-text="job.id || '-'"></span>
                     </h1>
-                    <p class="text-sm" style="color:#7F8C8D;">Technician view and actions.</p>
+                    <p class="text-sm" style="color:#000000;">Technician view and actions.</p>
                 </div>
                 <div class="flex flex-wrap gap-2 text-sm">
-                    <span class=" px-3 py-1 rounded-full font-semibold"
-                        style="background-color: {{ $urgencyChip[1] }}; color: {{ $urgencyChip[2] }};">
-                        {{ $urgencyChip[0] }}
-                    </span>
-                    <span class="px-3 py-1 rounded-full font-semibold"
-                        style="background-color: {{ $statusChip[1] }}; color: {{ $statusChip[2] }};">
-                        {{ $statusChip[0] }}
-                    </span>
-                    @if($job->due_at)
-                        <span class="px-3 py-1 rounded-full font-semibold" style="background-color:#F1C40F;color:#2C3E50;">
-                            Due: {{ $job->due_at->format('Y-m-d H:i') }}
+                    <span class=" px-3 py-1 rounded-full font-semibold" :style="chipStyle(urgencyChip.bg, urgencyChip.fg)"
+                        x-text="urgencyChip.label"></span>
+                    <span class="px-3 py-1 rounded-full font-semibold" :style="chipStyle(statusChip.bg, statusChip.fg)"
+                        x-text="statusChip.label"></span>
+                    <template x-if="job.due_at">
+                        <span class="px-3 py-1 rounded-full font-semibold" style="background-color:#F1C40F;color:#000000;">
+                            Due: <span x-text="job.due_at"></span>
                         </span>
-                    @endif
+                    </template>
                 </div>
             </div>
 
             <div class="grid gap-4 sm:grid-cols-2">
                 <div class="space-y-2">
-                    <div class="text-sm font-semibold" style="color:#2C3E50;">Location</div>
-                    <div style="color:#2C3E50;">{{ $locationText ?: '-' }}</div>
+                    <div class="text-sm font-semibold" style="color:#000000;">Location</div>
+                    <div style="color:#000000;" x-text="job.location || '-'"></div>
                 </div>
                 <div class="space-y-2">
-                    <div class="text-sm font-semibold" style="color:#2C3E50;">Category</div>
-                    <div style="color:#2C3E50;">{{ $job->category->name ?? '-' }}</div>
+                    <div class="text-sm font-semibold" style="color:#000000;">Category</div>
+                    <div style="color:#000000;" x-text="job.category || '-'"></div>
                 </div>
                 <div class="space-y-2">
-                    <div class="text-sm font-semibold" style="color:#2C3E50;">Reported at</div>
-                    <div style="color:#2C3E50;">
-                        {{ $job->created_at?->format('Y-m-d H:i') ?? '-' }}
-                    </div>
+                    <div class="text-sm font-semibold" style="color:#000000;">Reported at</div>
+                    <div style="color:#000000;" x-text="job.reported_at || '-'"></div>
                 </div>
                 <div class="space-y-2">
-                    <div class="text-sm font-semibold" style="color:#2C3E50;">Assigned at</div>
-                    <div style="color:#2C3E50;">
-                        {{ $job->assigned_at?->format('Y-m-d H:i') ?? '-' }}
-                    </div>
+                    <div class="text-sm font-semibold" style="color:#000000;">Assigned at</div>
+                    <div style="color:#000000;" x-text="job.assigned_at || '-'"></div>
                 </div>
             </div>
 
             <div class="mt-4">
-                <div class="text-sm font-semibold mb-1" style="color:#2C3E50;">Description</div>
-                <p class="text-sm" style="color:#2C3E50;">{{ $job->description ?? '-' }}</p>
+                <div class="text-sm font-semibold mb-1" style="color:#000000;">Description</div>
+                <p class="text-sm" style="color:#000000;" x-text="job.description || '-'"></p>
             </div>
 
             <div class="mt-4 grid gap-4 sm:grid-cols-2">
                 <div>
-                    <div class="text-sm font-semibold mb-1" style="color:#2C3E50;">Before photo (reporter)</div>
+                    <div class="text-sm font-semibold mb-1" style="color:#000000;">Before photo (reporter)</div>
                     <div class="rounded-lg border aspect-video flex items-center justify-center overflow-hidden"
                         style="border-color:#D7DDE5;background:#F5F7FA;">
-                        @if($beforePhotoPath)
-                            <img src="{{ asset('storage/' . $beforePhotoPath) }}" alt="Before photo"
-                                class="h-full w-full object-cover">
-                        @else
-                            <span class="text-sm" style="color:#7F8C8D;">No photo uploaded</span>
-                        @endif
+                        <template x-if="beforePhoto">
+                            <img :src="beforePhoto" alt="Before photo" class="h-full w-full object-cover">
+                        </template>
+                        <template x-if="!beforePhoto">
+                            <span class="text-sm" style="color:#000000;">No photo uploaded</span>
+                        </template>
                     </div>
                 </div>
                 <div>
-                    <div class="text-sm font-semibold mb-1" style="color:#2C3E50;">After repair photo</div>
+                    <div class="text-sm font-semibold mb-1" style="color:#000000;">After repair photo</div>
 
                     <div class="rounded-lg border overflow-hidden relative"
                         style="border-color:#D7DDE5;background:#F5F7FA;">
-                        @if(count($afterList) > 0)
-                            <div class="aspect-video flex items-center justify-center">
-                                <img id="afterImg" src="{{ $afterList[0]['url'] ?? '' }}" alt="Technician proof"
+                        <template x-if="afterPhotos.length > 0">
+                            <div class="aspect-video flex items-center justify-center relative">
+                                <img :src="afterPhotos[currentAfterIndex]?.url || ''" alt="Technician proof"
                                     class="h-full w-full object-cover">
                             </div>
-
-                            {{-- arrows --}}
-                            @if(count($afterList) > 1)
-                                <button type="button" id="afterPrev"
-                                    class="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full font-bold"
-                                    style="background:rgba(255,255,255,0.9);color:#2C3E50;border:1px solid #D7DDE5;">
-                                    &lsaquo;
-                                </button>
-                                <button type="button" id="afterNext"
-                                    class="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full font-bold"
-                                    style="background:rgba(255,255,255,0.9);color:#2C3E50;border:1px solid #D7DDE5;">
-                                    &rsaquo;
-                                </button>
-                            @endif
-                        @else
+                        </template>
+                        <template x-if="afterPhotos.length === 0">
                             <div class="aspect-video flex items-center justify-center">
-                                <span class="text-sm" style="color:#7F8C8D;">No technician proof yet</span>
+                                <span class="text-sm" style="color:#000000;">No technician proof yet</span>
                             </div>
-                        @endif
+                        </template>
+
+                        <template x-if="afterPhotos.length > 1">
+                            <button type="button"
+                                class="absolute left-3 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full font-bold shadow-lg"
+                                style="background:rgba(31,78,121,0.92);color:#FFFFFF;border:2px solid #1F4E79;"
+                                @click="prevAfter">
+                                ‹
+                            </button>
+                        </template>
+                        <template x-if="afterPhotos.length > 1">
+                            <button type="button"
+                                class="absolute right-3 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full font-bold shadow-lg"
+                                style="background:rgba(31,78,121,0.92);color:#FFFFFF;border:2px solid #1F4E79;"
+                                @click="nextAfter">
+                                ›
+                            </button>
+                        </template>
                     </div>
 
-                    {{-- dots --}}
-                    @if(count($afterList) > 1)
-                        <div id="afterDots" class="flex justify-center gap-2 mt-3"></div>
-                    @endif
-                    @if(count($afterList) > 0)
-                        <form id="delete-after-form"
-                            method="post"
-                            action="{{ route('technician.delete_after', [$job->id, $afterList[0]['id'] ?? 0]) }}"
-                            class="mt-2"
-                            onsubmit="return confirm('Remove this photo?');">
+                    <template x-if="afterPhotos.length > 1">
+                        <div class="flex justify-center gap-2 mt-3">
+                            <template x-for="(photo, idx) in afterPhotos" :key="photo.id">
+                                <button type="button" aria-label="View photo" class="h-2.5 w-2.5 rounded-full border"
+                                    :style="`border-color:#D7DDE5;background:${currentAfterIndex===idx ? '#1F4E79' : '#FFFFFF'}`"
+                                    @click="currentAfterIndex = idx"></button>
+                            </template>
+                        </div>
+                    </template>
+                    <div class="mt-3 flex flex-wrap gap-3 justify-start">
+                        <template x-if="afterPhotos.length > 0">
+                            <form method="post"
+                                :action="`/technician/tasks/${jobId}/attachments/${afterPhotos[currentAfterIndex]?.id}`"
+                                onsubmit="return confirm('Remove this photo?');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                    class="px-4 py-2 rounded-lg text-xs font-semibold shadow-sm"
+                                    style="background:linear-gradient(135deg,#fce4e4,#f8d7da);color:#c0392b;border:1px solid #f5c6cb;">
+                                    Remove image
+                                </button>
+                            </form>
+                        </template>
+                        <form x-ref="addProofForm" method="post"
+                            :action="`/technician/tasks/${jobId}/proofs`" enctype="multipart/form-data"
+                            class="flex items-center gap-2">
                             @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-xs rounded-lg px-3 py-2 border font-semibold"
-                                style="border-color:#D7DDE5;color:#C0392B;background:#FFFFFF;">
-                                Remove this photo
+                            <input type="file" name="proof_images[]" accept="image/*" multiple class="hidden"
+                                x-ref="addProofInput" @change="$refs.addProofForm.submit()">
+                            <button type="button"
+                                class="px-4 py-2 rounded-lg text-xs font-semibold shadow-sm"
+                                style="background:linear-gradient(135deg,#e8f4ff,#d6e9ff);color:#1f4e79;border:1px solid #b6d4fe;"
+                                @click.prevent="$refs.addProofInput.click()">
+                                Add more images
                             </button>
                         </form>
-                    @endif
+                    </div>
                 </div>
             </div>
         </div>
 
-        @if(count($afterList) > 1)
-            <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    const photos = @json($afterList);
-                    let idx = 0;
-
-                    const img = document.getElementById('afterImg');
-                    const prev = document.getElementById('afterPrev');
-                    const next = document.getElementById('afterNext');
-                    const dotsWrap = document.getElementById('afterDots');
-                    const deleteForm = document.getElementById('delete-after-form');
-                    const baseDelete = deleteForm ? deleteForm.action.replace(/\/[0-9]+$/, '') : null;
-
-                    const render = () => {
-                        if (!img) return;
-                        img.src = photos[idx].url;
-
-                        if (deleteForm && baseDelete) {
-                            deleteForm.action = baseDelete + '/' + photos[idx].id;
-                        }
-
-                        if (dotsWrap) {
-                            dotsWrap.innerHTML = '';
-                            photos.forEach((_, i) => {
-                                const b = document.createElement('button');
-                                b.type = 'button';
-                                b.setAttribute('aria-label', 'View photo ' + (i + 1));
-                                b.style.width = '10px';
-                                b.style.height = '10px';
-                                b.style.borderRadius = '999px';
-                                b.style.border = '1px solid #D7DDE5';
-                                b.style.background = i === idx ? '#1F4E79' : '#FFFFFF';
-                                b.addEventListener('click', () => { idx = i; render(); });
-                                dotsWrap.appendChild(b);
-                            });
-                        }
-                    };
-
-                    prev?.addEventListener('click', () => { idx = (idx - 1 + photos.length) % photos.length; render(); });
-                    next?.addEventListener('click', () => { idx = (idx + 1) % photos.length; render(); });
-
-                    render();
-                });
-            </script>
-        @endif
-
-        {{-- Status quick actions --}}
-        @if($isCompleted)
-            <div class="rounded-2xl shadow-sm border p-6" style="background:#FFFFFF;border-color:#D7DDE5;">
-                <h2 class="text-xl font-semibold mb-2" style="color:#2C3E50;">Status updates</h2>
-                <p class="text-sm" style="color:#7F8C8D;">This task is completed. Status changes and uploads are locked.</p>
-            </div>
-        @else
-            <div class="rounded-2xl shadow-sm border p-6" style="background:#FFFFFF;border-color:#D7DDE5;">
-                <h2 class="text-xl font-semibold mb-4" style="color:#2C3E50;">Status updates</h2>
-
+        {{-- Status quick actions (keep server actions) --}}
+        <div class="rounded-2xl shadow-sm border p-6" style="background:#FFFFFF;border-color:#D7DDE5;">
+            <h2 class="text-xl font-semibold mb-4" style="color:#000000;">Status updates</h2>
+            <template x-if="job.status === 'Completed'">
+                <div>
+                    <p class="text-sm" style="color:#000000;">This task is completed. Status changes and uploads are locked.
+                    </p>
+                </div>
+            </template>
+            <template x-if="job.status !== 'Completed'">
                 <div class="grid sm:grid-cols-2 gap-4">
-                    {{-- Start job --}}
-                    <form method="post" action="{{ route('technician.update_status', $job->id) }}"
-                        onsubmit="return confirm('Move this task to In Progress?');" class="rounded-2xl border p-4"
+                    <form method="post" :action="`/technician/tasks/${jobId}/status`" x-data="{ rejectionRequired: false }"
+                        onsubmit="return confirm('Update status?');" class="rounded-2xl border p-4 space-y-2"
                         style="border-color:#D7DDE5;background:#F9FBFF;">
                         @csrf
-                        <div class="text-sm font-semibold mb-2" style="color:#2C3E50;">Quick status</div>
+                        <div class="text-sm font-semibold" style="color:#000000;">Quick status</div>
 
-                        <button type="submit" name="status" value="In_Progress"
-                            @if($isInProgress) disabled @endif
+                        <button type="submit" name="status" value="In_Progress" :disabled="job.status === 'In_Progress'"
                             class="w-full rounded-xl px-4 py-3 font-semibold cursor-pointer"
-                            style="background:{{ $isInProgress ? '#D7DDE5' : '#3498DB' }};color:#FFFFFF;">
-                            {{ $isInProgress ? 'Already In Progress' : 'Start / In Progress' }}
+                            :style="`background:${job.status === 'In_Progress' ? '#D7DDE5' : '#3498DB'};color:#FFFFFF;`"
+                            @click="rejectionRequired = false">
+                            <span
+                                x-text="job.status === 'In_Progress' ? 'Already In Progress' : 'Start / In Progress'"></span>
                         </button>
 
-                        <p class="text-xs mt-2" style="color:#7F8C8D;">
-                            Use when you start working on this task.
+                        <button type="submit" name="status" value="Pending" :disabled="job.status === 'Pending'"
+                            class="w-full rounded-xl px-4 py-3 font-semibold cursor-pointer"
+                            :style="`background:${job.status === 'Pending' ? '#D7DDE5' : '#E74C3C'};color:#FFFFFF;`"
+                            @click="rejectionRequired = true">
+                            Reject / Set Pending
+                        </button>
+
+                        <div class="space-y-1">
+                            <label class="text-xs font-semibold" style="color:#000000;">Reason (required when
+                                rejecting)</label>
+                            <textarea name="reason" rows="2" class="w-full rounded-lg px-3 py-2 border focus:outline-none"
+                                style="border-color:#D7DDE5;color:#000000;background:#FFFFFF;" :required="rejectionRequired"
+                                placeholder="Enter reason for rejection"></textarea>
+                        </div>
+
+                        <p class="text-xs" style="color:#000000;">
+                            Use when you start working on this task or need to send it back to Pending.
                         </p>
                     </form>
 
-                    {{-- Complete job with proof --}}
-                    @if($isInProgress)
-                        <form method="post" action="{{ route('technician.complete_job', $job->id) }}" enctype="multipart/form-data"
-                            class="space-y-3" onsubmit="return confirm('Mark this job as completed and upload proof image?');">
+                    <template x-if="job.status === 'In_Progress'">
+                        <form method="post" :action="`/technician/tasks/${jobId}/complete`" enctype="multipart/form-data"
+                            class="space-y-3"
+                            onsubmit="return confirm('Mark this job as completed and upload proof image?');">
                             @csrf
 
-                            <label class="text-sm font-medium" style="color:#2C3E50;">Complete job</label>
+                            <label class="text-sm font-medium" style="color:#000000;">Complete job</label>
 
                             <div class="space-y-2">
-                                <label class="text-xs font-medium" style="color:#2C3E50;">After repair photo (proof)</label>
-                                <label for="proof-images"
-                                    class="block w-full rounded-xl border-2 border-dashed px-4 py-6 cursor-pointer text-center"
-                                    style="border-color:#B0BEC5;background:#F9FBFF;color:#2C3E50;">
-                                    <div class="text-sm font-semibold">Click to choose photos</div>
-                                    <div class="text-xs mt-1" style="color:#546E7A;">PNG, JPG or JPEG - Multiple files allowed</div>
-                                </label>
 
-                                <input id="proof-images" type="file" name="proof_images[]" accept="image/*" multiple required
-                                    class="hidden">
 
-                                <div id="after-photo-preview" class="grid grid-cols-3 sm:grid-cols-4 gap-2"></div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-medium" style="color:#000000;">After repair photo
+                                        (proof)</label>
 
-                                <p class="text-xs" style="color:#7F8C8D;">Required when closing the task. Stored as technician proof.</p>
+                                    <label for="proof-images"
+                                        class="block w-full rounded-xl border-2 border-dashed px-4 py-6 cursor-pointer text-center"
+                                        style="border-color:#B0BEC5;background:#F9FBFF;color:#000000;"
+                                        @click.prevent="$refs.proofInput.click()">
+                                        <div class="text-sm font-semibold">Click to choose photos</div>
+                                        <div class="text-xs mt-1" style="color:#546E7A;">PNG, JPG or JPEG - Multiple files
+                                            allowed</div>
+                                    </label>
+
+                                    <input id="proof-images" x-ref="proofInput" type="file" name="proof_images[]"
+                                        accept="image/*" multiple required class="hidden"
+                                        x-on:change="renderProofPreview($event)">
+
+                                    <!-- Preview grid -->
+                                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                        <template x-for="(url, idx) in proofPreviewUrls" :key="idx">
+                                            <div class="border rounded-lg overflow-hidden"
+                                                style="border-color:#D7DDE5;background:#F5F7FA;aspect-ratio:4/3;">
+                                                <img :src="url" alt="After repair preview"
+                                                    class="w-full h-full object-cover">
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <p class="text-xs" style="color:#000000;">Required when closing the task. Stored as
+                                        technician proof.</p>
+                                </div>
+
                             </div>
 
                             <div class="space-y-2">
-                                <label for="notes" class="text-xs font-medium" style="color:#2C3E50;">Resolution notes</label>
+                                <label for="notes" class="text-xs font-medium" style="color:#000000;">Resolution
+                                    notes</label>
                                 <textarea id="notes" name="resolution_notes" rows="3"
                                     class="w-full rounded-lg px-3 py-2 border focus:outline-none"
-                                    style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;" required></textarea>
+                                    style="border-color:#D7DDE5;color:#000000;background:#FFFFFF;" required></textarea>
                             </div>
 
                             <button type="submit" class="rounded-lg px-4 py-2 font-semibold text-sm"
@@ -278,104 +245,108 @@ $afterList = ($afterPhotos ?? collect())
                                 Mark as Completed
                             </button>
                         </form>
-                    @else
+                    </template>
+                    <template x-if="job.status !== 'In_Progress'">
                         <div class="rounded-2xl border p-4" style="border-color:#D7DDE5;background:#F5F7FA;">
-                            <div class="text-sm font-semibold mb-2" style="color:#2C3E50;">Complete job</div>
-                            <p class="text-xs" style="color:#7F8C8D;">Set status to In Progress to upload proof images and close this task.</p>
+                            <div class="text-sm font-semibold mb-2" style="color:#000000;">Complete job</div>
+                            <p class="text-xs" style="color:#000000;">Set status to In Progress to upload proof images and
+                                close this task.</p>
                         </div>
-                    @endif
+                    </template>
                 </div>
+            </template>
 
-                <div class="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between text-sm"
-                    style="color:#7F8C8D;">
-                    <div>Only the assigned technician or admin can update this task.</div>
-                    <div class="flex gap-2">
-                        <a href="{{ route('technician.tasks') }}" class="rounded-lg px-4 py-2 font-semibold border"
-                            style="border-color:#D7DDE5;color:#1F4E79;">
-                            Back to jobs
-                        </a>
-                    </div>
+            <div class="mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between text-sm"
+                style="color:#000000;">
+                <div>Only the assigned technician or admin can update this task.</div>
+                <div class="flex gap-2">
+                    <a href="{{ route('technician.tasks') }}" class="rounded-lg px-4 py-2 font-semibold border"
+                        style="border-color:#D7DDE5;color:#1F4E79;">
+                        Back to jobs
+                    </a>
                 </div>
             </div>
-        @endif
+        </div>
     </section>
-
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const input = document.getElementById('proof-images');
-            const preview = document.getElementById('after-photo-preview');
+        function taskDetailPage(jobId) {
+            return {
+                jobId,
+                job: {},
+                beforePhoto: null,
+                afterPhotos: [],
+                currentAfterIndex: 0,
 
-            if (!input || !preview) return;
+                // ====== NEW: local preview (before submit) ======
+                proofPreviewUrls: [],
+                renderProofPreview(e) {
+                    const files = e.target.files || [];
 
-            let buffer = new DataTransfer();
+                    // revoke old urls to avoid memory leak
+                    this.proofPreviewUrls.forEach(u => URL.revokeObjectURL(u));
+                    this.proofPreviewUrls = [];
 
-            const syncAndRender = () => {
-                input.files = buffer.files;
-                preview.innerHTML = '';
-
-                Array.from(buffer.files).forEach((file, index) => {
-                    if (!file.type.startsWith('image/')) return;
-
-                    const wrapper = document.createElement('div');
-                    wrapper.style.position = 'relative';
-                    wrapper.style.border = '#D7DDE5 1px solid';
-                    wrapper.style.borderRadius = '8px';
-                    wrapper.style.overflow = 'hidden';
-                    wrapper.style.background = '#F5F7FA';
-                    wrapper.style.aspectRatio = '4 / 3';
-                    wrapper.style.display = 'flex';
-                    wrapper.style.alignItems = 'center';
-                    wrapper.style.justifyContent = 'center';
-
-                    const img = document.createElement('img');
-                    img.src = URL.createObjectURL(file);
-                    img.alt = 'After repair preview';
-                    img.style.width = '100%';
-                    img.style.height = '100%';
-                    img.style.objectFit = 'cover';
-                    img.onload = () => URL.revokeObjectURL(img.src);
-
-                    const removeBtn = document.createElement('button');
-                    removeBtn.type = 'button';
-                    removeBtn.setAttribute('aria-label', 'Remove photo ' + (index + 1));
-                    removeBtn.textContent = 'x';
-                    removeBtn.style.position = 'absolute';
-                    removeBtn.style.top = '6px';
-                    removeBtn.style.right = '6px';
-                    removeBtn.style.height = '24px';
-                    removeBtn.style.width = '24px';
-                    removeBtn.style.borderRadius = '999px';
-                    removeBtn.style.border = '1px solid #D7DDE5';
-                    removeBtn.style.background = '#FFFFFF';
-                    removeBtn.style.color = '#2C3E50';
-                    removeBtn.style.fontWeight = 'bold';
-                    removeBtn.style.cursor = 'pointer';
-                    removeBtn.addEventListener('click', () => {
-                        const nextBuffer = new DataTransfer();
-                        Array.from(buffer.files).forEach((f, i) => {
-                            if (i !== index) {
-                                nextBuffer.items.add(f);
-                            }
-                        });
-                        buffer = nextBuffer;
-                        syncAndRender();
+                    Array.from(files).forEach(file => {
+                        if (!file.type.startsWith('image/')) return;
+                        this.proofPreviewUrls.push(URL.createObjectURL(file));
                     });
+                },
 
-                    wrapper.appendChild(removeBtn);
-                    wrapper.appendChild(img);
-                    preview.appendChild(wrapper);
-                });
+                get urgencyChip() {
+                    const u = (this.job.urgency || 'Medium').toLowerCase();
+                    if (u === 'high') return { label: 'High urgency', bg: '#E74C3C', fg: '#FFFFFF' };
+                    if (u === 'low') return { label: 'Low urgency', bg: '#2ECC71', fg: '#FFFFFF' };
+                    return { label: 'Medium urgency', bg: '#F1C40F', fg: '#000000' };
+                },
+                get statusChip() {
+                    const s = this.job.status || 'Assigned';
+                    if (s === 'In_Progress') return { label: 'In Progress', bg: '#3498DB', fg: '#FFFFFF' };
+                    if (s === 'Completed') return { label: 'Completed', bg: '#27AE60', fg: '#FFFFFF' };
+                    return { label: s, bg: '#F39C12', fg: '#FFFFFF' };
+                },
+                chipStyle(bg, fg) { return `background-color:${bg};color:${fg};`; },
+
+                nextAfter() {
+                    this.currentAfterIndex = (this.currentAfterIndex + 1) % this.afterPhotos.length;
+                },
+                prevAfter() {
+                    this.currentAfterIndex = (this.currentAfterIndex - 1 + this.afterPhotos.length) % this.afterPhotos.length;
+                },
+
+                async load() {
+                    try {
+                        const res = await fetch(`/api/tech/tasks/${this.jobId}`, { credentials: 'same-origin' });
+                        if (!res.ok) throw new Error('Failed to load task');
+                        const json = await res.json();
+                        const data = json.data || {};
+
+                        this.job = {
+                            id: data.id,
+                            description: data.description,
+                            urgency: data.urgency,
+                            status: data.status_value, // must match 'In_Progress' / 'Completed' / etc.
+                            reported_at: data.reported_at ? new Date(data.reported_at).toLocaleString() : '-',
+                            assigned_at: data.assigned_at ? new Date(data.assigned_at).toLocaleString() : '-',
+                            due_at: data.due_at ? new Date(data.due_at).toLocaleString() : '-',
+                            location: [data.location?.campus, data.location?.block, data.location?.room].filter(Boolean).join(', '),
+                            category: data.category,
+                        };
+
+                        this.beforePhoto = data.attachments?.reporter_proof || null;
+                        this.afterPhotos = (data.attachments?.technician_proofs || []).map(p => ({
+                            id: p.id ?? 0,
+                            url: p.url,
+                        }));
+                        this.currentAfterIndex = 0;
+
+                        // reset local preview when loading job
+                        this.proofPreviewUrls.forEach(u => URL.revokeObjectURL(u));
+                        this.proofPreviewUrls = [];
+                    } catch (e) {
+                        console.error(e);
+                    }
+                },
             };
-
-            input.addEventListener('change', () => {
-                const nextBuffer = new DataTransfer();
-                Array.from(buffer.files).forEach((file) => nextBuffer.items.add(file));
-                Array.from(input.files || []).forEach((file) => nextBuffer.items.add(file));
-                buffer = nextBuffer;
-                syncAndRender();
-            });
-
-            syncAndRender();
-        });
+        }
     </script>
 @endsection
