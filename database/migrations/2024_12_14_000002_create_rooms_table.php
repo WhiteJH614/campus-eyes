@@ -13,15 +13,12 @@ return new class extends Migration
     {
         Schema::create('rooms', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('block_id');
-            $table->integer('floor_number');
-            $table->string('room_name', 50);
-
-            $table->foreign('block_id')
-                ->references('block_id')
-                ->on('blocks')
+            $table->foreignId('block_id')
+                ->constrained('blocks')
                 ->onDelete('restrict')
                 ->onUpdate('cascade');
+            $table->integer('floor_number');
+            $table->string('room_name', 50);
         });
     }
 
