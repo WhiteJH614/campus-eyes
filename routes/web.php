@@ -54,7 +54,12 @@ Route::prefix('technician')->middleware('auth')->group(function () {
     Route::delete('/tasks/{id}/attachments/{attachment}', [TechnicianController::class, 'deleteAfterPhoto'])
         ->name('technician.delete_after');
 
+    Route::post('/tasks/{id}/proofs', [TechnicianController::class, 'addProofImages'])
+        ->name('technician.add_proof_images');
+
     Route::post('/tasks/{id}/update-status', [TechnicianController::class, 'updateStatus'])->name('technician.update_status');
+    // Alternate status endpoint to match UI action
+    Route::post('/tasks/{id}/status', [TechnicianController::class, 'updateStatus']);
     Route::post('/tasks/{id}/complete', [TechnicianController::class, 'completeJob'])->name('technician.complete_job');
 });
 
