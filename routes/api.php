@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Technician\TechnicianController;
 use App\Http\Controllers\Api\ReportApiController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,3 +24,38 @@ Route::prefix('v1')->group(function () {
     Route::get('/reports/urgency/{urgency}', [ReportApiController::class, 'byUrgency'])->name('api.reports.byUrgency');
     Route::get('/reports/{id}', [ReportApiController::class, 'show'])->name('api.reports.show');
 });
+
+
+// Technician Dashboard and Profile APIs
+
+Route::middleware('web')->get(
+    '/technician/dashboard',
+    [TechnicianController::class, 'dashboardApi']
+);
+
+Route::middleware('web')->get(
+    '/tech/tasks',
+    [TechnicianController::class, 'tasksApi']
+);
+
+Route::middleware('web')->get('/tech/tasks/{id}', [TechnicianController::class, 'taskDetailApi']);
+
+Route::middleware('web')->get(
+    '/tech/completed',
+    [TechnicianController::class, 'completedApi']
+);
+
+Route::middleware('web')->get(
+    '/tech/profile',
+    [TechnicianController::class, 'profileApi']
+);
+
+Route::middleware('web')->post(
+    '/tech/profile',
+    [TechnicianController::class, 'profileUpdateApi']
+);
+
+Route::middleware('web')->post(
+    '/tech/profile/password',
+    [TechnicianController::class, 'profilePasswordApi']
+);

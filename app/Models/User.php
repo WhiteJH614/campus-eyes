@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -19,16 +18,16 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'name',
+        'name',                 // Primary display name
         'email',
         'password',
         'phone_number',
-        'role',
-        'reporter_role',
+        'role',                 // Reporter / Technician / Admin
+        'reporter_role',        // Student / Staff
         'campus',
-        'specialization',
-        'availability_status',
-        'admin_level',
+        'specialization',       // Technician specialization
+        'availability_status',  // Technician availability: Available / Busy / On_Leave
+        'admin_level',          // Admin level, e.g., Supervisor
     ];
 
     /**

@@ -8,6 +8,13 @@ export default {
         './storage/framework/views/*.php',
         './resources/views/**/*.blade.php',
     ],
+    safelist: [
+        // Dashboard stat card colors defined in controllers (not directly in views)
+        'bg-[#1F4E79]',
+        'bg-[#3498DB]',
+        'bg-[#27AE60]',
+        'bg-[#F39C12]',
+    ],
 
     theme: {
         extend: {

@@ -2,41 +2,28 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Block extends Model
 {
-    /**
-     * The primary key for the model.
-     */
-    protected $primaryKey = 'id';
+    use HasFactory;
 
-    /**
-     * Indicates if the model should be timestamped.
-     */
-    public $timestamps = false;
-
-    /**
-     * The attributes that are mass assignable.
-     */
+    // 使用默认主键 id，不需要写 primaryKey
     protected $fillable = [
+        'campus_id',
         'block_name',
     ];
 
-    /**
-     * Get the rooms in this block.
-     */
-    public function rooms(): HasMany
+    public function campus(): BelongsTo
     {
-        return $this->hasMany(Room::class, 'block_id', 'id');
+        return $this->belongsTo(Campus::class, 'campus_id');
     }
 
-    /**
-     * Get the route key for the model.
-     */
-    public function getRouteKeyName(): string
+    public function rooms(): HasMany
     {
-        return 'id';
+        return $this->hasMany(Room::class, 'block_id');
     }
 }
