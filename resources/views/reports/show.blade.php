@@ -45,6 +45,24 @@
                             </p>
                         </div>
                         <div class="flex items-center gap-2">
+                             @if($report->status === 'Pending')
+                                <a href="{{ route('reports.edit', $report) }}" 
+                                   class="px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors duration-150"
+                                   style="background:#3498DB;">
+                                    Edit Report
+                                </a>
+                                
+                                <form method="POST" action="{{ route('reports.destroy', $report) }}" onsubmit="return confirm('Are you sure you want to delete this report?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" 
+                                            class="px-4 py-2 text-sm font-medium rounded-lg text-white transition-colors duration-150"
+                                            style="background:#C0392B;">
+                                        Delete
+                                    </button>
+                                </form>
+                            @endif
+
                             <span class="px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-wide border"
                                 style="
                                 @if($report->urgency === 'High') background:#FADBD8;color:#C0392B;border-color:transparent
@@ -133,11 +151,11 @@
                                     </div>
                                 @endif
                                 
-                                <div class="relative">
+                                <!-- <div class="relative">
                                     <div class="absolute -left-[21px] top-1 w-4 h-4 rounded-full border-2 bg-white"
                                          style="border-color:#D7DDE5;"></div>
                                     <h4 class="text-sm font-semibold text-gray-400">Archived</h4>
-                                </div>
+                                </div> -->
                             </div>
                         </div>
 

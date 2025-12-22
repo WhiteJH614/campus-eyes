@@ -31,6 +31,43 @@
                 </div>
             </div>
 
+            <!-- Status Filters -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4 mb-6">
+                <!-- All Reports -->
+                <a href="{{ route('reports.index') }}" 
+                   class="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border transition-all duration-200 hover:shadow-md
+                   {{ !request('status') ? 'bg-white border-indigo-600 ring-1 ring-indigo-600 shadow-sm' : 'bg-white border-gray-200 hover:border-indigo-300' }}">
+                    <span class="text-xl sm:text-2xl font-bold" style="color:#2C3E50;">
+                        {{ $statusCounts->sum() }}
+                    </span>
+                    <span class="text-xs font-bold uppercase tracking-wider mt-1" style="color:#7F8C8D;">All</span>
+                </a>
+
+                @foreach(['Pending', 'Assigned', 'In_Progress', 'Completed'] as $status)
+                    @php
+                       $count = $statusCounts->get($status, 0);
+                       $isActive = request('status') === $status;
+                       $colorCode = match($status) {
+                           'Pending' => '#F39C12',     // Orange/Yellow
+                           'Assigned' => '#9B59B6',    // Purple
+                           'In_Progress' => '#3498DB', // Blue
+                           'Completed' => '#1ABC9C',   // Teal/Green
+                           default => '#95A5A6'
+                       };
+                       $label = str_replace('_', ' ', $status);
+                    @endphp
+                    <a href="{{ route('reports.index', ['status' => $status]) }}" 
+                       class="flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl border transition-all duration-200 hover:shadow-md
+                       {{ $isActive ? 'bg-white ring-1 shadow-sm' : 'bg-white hover:border-gray-300' }}"
+                       style="{{ $isActive ? 'border-color:' . $colorCode . '; ring-color:' . $colorCode : 'border-color:#D7DDE5' }}">
+                        <span class="text-xl sm:text-2xl font-bold" style="color:{{ $colorCode }};">
+                            {{ $count }}
+                        </span>
+                        <span class="text-xs font-bold uppercase tracking-wider mt-1" style="color:#7F8C8D;">{{ $label }}</span>
+                    </a>
+                @endforeach
+            </div>
+
             @if (session('success'))
                 <div class="rounded-xl border p-4 mb-6 flex items-start gap-3"
                     style="background:#D1F2EB;border-color:#A3E4D7;color:#0E6251;">
@@ -62,11 +99,32 @@
                         <table class="min-w-full divide-y" style="divide-color:#eaeff5;">
                             <thead style="background:#F5F7FA;">
                                 <tr>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color:#7F8C8D;">ID</th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color:#7F8C8D;">Location</th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color:#7F8C8D;">Category</th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color:#7F8C8D;">Status</th>
-                                    <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider" style="color:#7F8C8D;">Date</th>
+                                    @php
+                                        $columns = [
+                                            'id' => 'ID',
+                                            'location' => 'Location',
+                                            'category' => 'Category',
+                                            'status' => 'Status',
+                                            'created_at' => 'Date'
+                                        ];
+                                    @endphp
+                                    
+                                    @foreach($columns as $key => $label)
+                                    <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider group cursor-pointer hover:bg-gray-100 transition-colors" style="color:#7F8C8D;">
+                                        <a href="{{ route('reports.index', array_merge(request()->query(), ['sort_by' => $key, 'sort_direction' => request('sort_by') === $key && request('sort_direction') === 'asc' ? 'desc' : 'asc', 'page' => 1])) }}" 
+                                           class="flex items-center gap-1 w-full h-full">
+                                            {{ $label }}
+                                            @if(request('sort_by', 'created_at') === $key)
+                                                <span class="text-indigo-600 font-bold bg-indigo-50 rounded px-1">{{ request('sort_direction', 'desc') === 'asc' ? '↑' : '↓' }}</span>
+                                            @elseif(request('sort_by') === null && $key === 'created_at')
+                                                 {{-- Default sort --}}
+                                                <span class="text-indigo-600 font-bold bg-indigo-50 rounded px-1">↓</span>
+                                            @else
+                                                <span class="text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">↕</span>
+                                            @endif
+                                        </a>
+                                    </th>
+                                    @endforeach
                                     <th class="px-6 py-4 text-center text-xs font-semibold uppercase tracking-wider" style="color:#7F8C8D;">Action</th>
                                 </tr>
                             </thead>
