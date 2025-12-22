@@ -15,10 +15,8 @@ Route::get('/', function () {
     return view('index');
 });
 
-Route::view('/login', 'Authentication.login')->name('login');
-Route::view('/register', 'Authentication.register')->name('register');
-Route::view('/forgot-password', 'Authentication.forgot-password')->name('password.request');
-Route::view('/reset-password', 'Authentication.reset-password')->name('password.reset');
+
+Route::redirect('/reset-password', '/forgot-password');
 
 Route::middleware('guest')->group(function () {
     Route::post('/login', [LoginController::class, 'authenticate'])->name('login.perform');
@@ -27,9 +25,9 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     // Generic logged-in dashboard (used by Breeze auth scaffolding)
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/reporter/dashboard', function () {
+        return view('reports.dashboard');
+    })->name('reports.dashboard')->middleware('role:Reporter');
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
@@ -76,12 +74,18 @@ Route::get('/db-test', function () {
 
 // Reporter Routes (protected by auth and role middleware)
 Route::middleware(['auth', 'role:Reporter'])->group(function () {
+    Route::get('/reporter/dashboard', function () {
+        return view('reports.dashboard');
+    })->name('reporter.dashboard')->middleware('role:Reporter');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/create', [ReportController::class, 'create'])->name('reports.create');
     Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
     // IMPORTANT: Specific routes must come BEFORE wildcard routes
     Route::get('/reports/rooms/{blockId}', [ReportController::class, 'getRoomsByBlock'])->name('reports.rooms');
     Route::get('/reports/{report}', [ReportController::class, 'show'])->name('reports.show');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 require __DIR__.'/auth.php';

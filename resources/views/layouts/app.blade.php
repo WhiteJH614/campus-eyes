@@ -17,7 +17,8 @@
         'reporter' => [
             ['label' => 'My Dashboard', 'url' => '/reporter/dashboard'],
             ['label' => 'New Report', 'url' => '/reports/create'],
-            ['label' => 'My Reports', 'url' => '/reports/mine'],
+            ['label' => 'My Reports', 'url' => '/reports' ],
+            ['label' => 'My Profile', 'url' => '/profile'],
         ],
         'technician' => [
             ['label' => 'Task Dashboard', 'url' => '/technician/dashboard'],
