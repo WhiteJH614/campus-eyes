@@ -14,10 +14,12 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// API v1 Routes
+// API v1 Routes - IFA Compliant Web Services
 Route::prefix('v1')->group(function () {
-    // Report endpoints (public for other modules to access)
-    Route::get('/reports', [ReportApiController::class, 'index']);
-    Route::get('/reports/stats', [ReportApiController::class, 'stats']);
-    Route::get('/reports/{id}', [ReportApiController::class, 'show']);
+    // Report endpoints (exposed for other modules to consume)
+    Route::get('/reports', [ReportApiController::class, 'index'])->name('api.reports.index');
+    Route::get('/reports/stats', [ReportApiController::class, 'stats'])->name('api.reports.stats');
+    Route::get('/reports/status/{status}', [ReportApiController::class, 'byStatus'])->name('api.reports.byStatus');
+    Route::get('/reports/urgency/{urgency}', [ReportApiController::class, 'byUrgency'])->name('api.reports.byUrgency');
+    Route::get('/reports/{id}', [ReportApiController::class, 'show'])->name('api.reports.show');
 });
