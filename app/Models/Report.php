@@ -45,17 +45,32 @@ class Report extends Model
 
     public function category(): BelongsTo
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(Category::class, 'category_id');
     }
 
     public function room(): BelongsTo
     {
-        return $this->belongsTo(Room::class);
+        return $this->belongsTo(Room::class, 'id');
     }
 
     public function attachments(): HasMany
     {
         return $this->hasMany(Attachment::class, 'report_id');
     }
-    
+
+    /**
+     * Scope to get reports by status.
+     */
+    public function scopeStatus($query, string $status)
+    {
+        return $query->where('status', $status);
+    }
+
+    /**
+     * Scope to get reports by urgency.
+     */
+    public function scopeUrgency($query, string $urgency)
+    {
+        return $query->where('urgency', $urgency);
+    }
 }

@@ -15,15 +15,25 @@ class Attachment extends Model
         'file_name',
         'file_path',
         'file_type',
-        'attachment_type', // REPORTER_PROOF / TECHNICIAN_PROOF
+        'attachment_type',
+        'uploaded_at',
     ];
 
-    protected $casts = [
-        'uploaded_at' => 'datetime',
-    ];
+    /**
+     * The attributes that should be cast.
+     */
+    protected function casts(): array
+    {
+        return [
+            'uploaded_at' => 'datetime',
+        ];
+    }
 
+    /**
+     * Get the report this attachment belongs to.
+     */
     public function report(): BelongsTo
     {
-        return $this->belongsTo(Report::class);
+        return $this->belongsTo(Report::class, 'report_id');
     }
 }

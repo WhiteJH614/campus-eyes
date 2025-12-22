@@ -54,20 +54,42 @@ class User extends Authenticatable
     }
 
     /**
-     * Reports created by this user as Reporter.
+     * Get the reports submitted by this user.
      */
     public function reports(): HasMany
     {
-        // users.id -> reports.reporter_id
         return $this->hasMany(Report::class, 'reporter_id');
     }
 
     /**
-     * Reports assigned to this user as Technician.
+     * Get the reports assigned to this user (as technician).
      */
     public function assignedReports(): HasMany
     {
         return $this->hasMany(Report::class, 'technician_id');
     }
-}
 
+    /**
+     * Check if user is a Reporter.
+     */
+    public function isReporter(): bool
+    {
+        return $this->role === 'Reporter';
+    }
+
+    /**
+     * Check if user is a Technician.
+     */
+    public function isTechnician(): bool
+    {
+        return $this->role === 'Technician';
+    }
+
+    /**
+     * Check if user is an Admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'Admin';
+    }
+}

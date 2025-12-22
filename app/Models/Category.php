@@ -15,8 +15,11 @@ class Category extends Model
         'description',
     ];
 
+    /**
+     * Get the reports in this category.
+     */
     public function reports(): HasMany
     {
-        return $this->hasMany(Report::class);
+        return $this->hasMany(Report::class, 'category_id');
     }
 }
