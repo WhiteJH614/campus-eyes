@@ -18,14 +18,57 @@ class ReportController extends Controller
     /**
      * Display a listing of the user's reports.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $reports = Report::where('reporter_id', Auth::id())
-            ->with(['room.block', 'category', 'technician'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        // Get status counts for the current user
+        $statusCounts = Report::where('reporter_id', Auth::id())
+            ->selectRaw('status, count(*) as count')
+            ->groupBy('status')
+            ->pluck('count', 'status');
 
-        return view('reports.index', compact('reports'));
+        $sortColumn = $request->query('sort_by', 'created_at');
+        $sortDirection = $request->query('sort_direction', 'desc');
+        $filterStatus = $request->query('status');
+
+        $allowedSorts = ['id', 'location', 'category', 'status', 'created_at'];
+
+        if (!in_array($sortColumn, $allowedSorts)) {
+            $sortColumn = 'created_at';
+        }
+
+        if (!in_array($sortDirection, ['asc', 'desc'])) {
+            $sortDirection = 'desc';
+        }
+
+        $query = Report::where('reporter_id', Auth::id())
+            ->with(['room.block', 'category', 'technician']);
+
+        // Apply status filter if present
+        if ($filterStatus && in_array($filterStatus, ['Pending', 'In_Progress', 'Completed', 'Assigned'])) {
+            $query->where('status', $filterStatus);
+        }
+
+        switch ($sortColumn) {
+            case 'location':
+                $query->join('rooms', 'reports.room_id', '=', 'rooms.id')
+                      ->join('blocks', 'rooms.block_id', '=', 'blocks.id')
+                      ->select('reports.*')
+                      ->orderBy('blocks.block_name', $sortDirection)
+                      ->orderBy('rooms.room_name', $sortDirection);
+                break;
+            case 'category':
+                $query->join('categories', 'reports.category_id', '=', 'categories.id')
+                      ->select('reports.*')
+                      ->orderBy('categories.name', $sortDirection);
+                break;
+            default:
+                $query->select('reports.*')->orderBy('reports.' . $sortColumn, $sortDirection);
+                break;
+        }
+
+        $reports = $query->paginate(10)->withQueryString();
+
+        return view('reports.index', compact('reports', 'statusCounts'));
     }
 
     /**
@@ -94,6 +137,98 @@ class ReportController extends Controller
         $report->load(['room.block', 'category', 'technician', 'attachments']);
 
         return view('reports.show', compact('report'));
+    }
+
+    /**
+     * Show the form for editing the specified report.
+     */
+    public function edit(Report $report): View
+    {
+        if ($report->reporter_id !== Auth::id()) {
+            abort(403, 'You can only edit your own reports.');
+        }
+
+        if ($report->status !== 'Pending') {
+            abort(403, 'You can only edit pending reports.');
+        }
+
+        $blocks = Block::all();
+        $categories = Category::all();
+
+        return view('reports.edit', compact('report', 'blocks', 'categories'));
+    }
+
+    /**
+     * Update the specified report in storage.
+     */
+    public function update(Request $request, Report $report): RedirectResponse
+    {
+        if ($report->reporter_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($report->status !== 'Pending') {
+            return redirect()->route('reports.show', $report)
+                ->with('error', 'Cannot update a report that is already being processed.');
+        }
+
+        $validated = $request->validate([
+            'room_id' => ['required', 'exists:rooms,id'],
+            'category_id' => ['required', 'exists:categories,id'],
+            'description' => ['required', 'string', 'max:2000'],
+            'urgency' => ['required', 'in:Low,Medium,High'],
+            'attachment' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
+        ]);
+
+        $report->update([
+            'room_id' => $validated['room_id'],
+            'category_id' => $validated['category_id'],
+            'description' => $validated['description'],
+            'urgency' => $validated['urgency'],
+        ]);
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $fileName = time() . '_' . $file->getClientOriginalName();
+            $filePath = $file->storeAs('attachments', $fileName, 'public');
+
+            Attachment::create([
+                'report_id' => $report->id,
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $filePath,
+                'file_type' => $file->getClientMimeType(),
+                'attachment_type' => 'REPORTER_PROOF',
+            ]);
+        }
+
+        return redirect()->route('reports.show', $report)
+            ->with('success', 'Report updated successfully.');
+    }
+
+    /**
+     * Remove the specified report from storage.
+     */
+    public function destroy(Report $report): RedirectResponse
+    {
+        if ($report->reporter_id !== Auth::id()) {
+            abort(403);
+        }
+
+        if ($report->status !== 'Pending') {
+            return redirect()->route('reports.show', $report)
+                ->with('error', 'Cannot delete a report that is already being processed.');
+        }
+
+        // Delete attachments
+        foreach ($report->attachments as $attachment) {
+            Storage::disk('public')->delete($attachment->file_path);
+            $attachment->delete();
+        }
+
+        $report->delete();
+
+        return redirect()->route('reports.index')
+            ->with('success', 'Report deleted successfully.');
     }
 
     /**
