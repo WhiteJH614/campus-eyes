@@ -6,101 +6,159 @@
         ['label' => 'Home', 'url' => '/'],
         ['label' => 'Reporter Dashboard'],
     ];
+
+    // Get reports data
+    $reports = Auth::user()->reports()->latest()->take(5)->get();
 @endphp
 
 @section('content')
-
-    <div class="py-12">
+    <div class="py-8 space-y-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Welcome Card -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg mb-6">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-                    <h3 class="text-lg font-semibold mb-2">Welcome, {{ Auth::user()->name }}!</h3>
-                    <p class="text-gray-600 dark:text-gray-400">
-                        You are logged in as a <strong>{{ Auth::user()->reporter_role ?? 'Reporter' }}</strong>.
-                    </p>
+            <!-- Personalized Hero Section -->
+            <div class="relative overflow-hidden rounded-2xl text-white shadow-lg mb-8"
+                style="background:linear-gradient(120deg,#1F4E79,#285F96);">
+                <div class="absolute inset-0" style="background:linear-gradient(180deg,rgba(255,255,255,0.08),transparent);"></div>
+                <div class="relative px-8 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div>
+                        <h1 class="text-3xl font-semibold">Welcome back, {{ Auth::user()->name }}!</h1>
+                        <p class="mt-2 text-lg" style="color:rgba(255,255,255,0.9);">
+                            Member since {{ Auth::user()->created_at->format('F Y') }} • {{ Auth::user()->reporter_role ?? 'Reporter' }}
+                        </p>
+                    </div>
+                    <!-- Stats in Hero -->
+                    @if(Auth::user()->role === 'Reporter')
+                    <div class="flex gap-4">
+                        <div class="rounded-xl px-5 py-3 border backdrop-blur-sm"
+                            style="background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.25);">
+                            <div class="text-xs uppercase tracking-wider" style="color:rgba(255,255,255,0.8);">Pending</div>
+                            <div class="text-2xl font-bold">{{ Auth::user()->reports()->where('status', 'Pending')->count() }}</div>
+                        </div>
+                        <div class="rounded-xl px-5 py-3 border backdrop-blur-sm"
+                            style="background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.25);">
+                            <div class="text-xs uppercase tracking-wider" style="color:rgba(255,255,255,0.8);">In Progress</div>
+                            <div class="text-2xl font-bold">{{ Auth::user()->reports()->whereIn('status', ['Assigned', 'In_Progress'])->count() }}</div>
+                        </div>
+                        <div class="rounded-xl px-5 py-3 border backdrop-blur-sm"
+                            style="background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.25);">
+                            <div class="text-xs uppercase tracking-wider" style="color:rgba(255,255,255,0.8);">Completed</div>
+                            <div class="text-2xl font-bold">{{ Auth::user()->reports()->where('status', 'Completed')->count() }}</div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
             </div>
 
             @if(Auth::user()->role === 'Reporter')
-            <!-- Quick Actions -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <a href="{{ route('reports.create') }}" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg p-6 transition-colors">
-                    <div class="text-3xl mb-2">📝</div>
-                    <h4 class="font-semibold">Submit New Report</h4>
-                    <p class="text-indigo-200 text-sm">Report a maintenance issue</p>
-                </a>
-                <a href="{{ route('reports.index') }}" class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg p-6 shadow-sm border dark:border-gray-700 transition-colors">
-                    <div class="text-3xl mb-2">📋</div>
-                    <h4 class="font-semibold text-gray-900 dark:text-white">My Reports</h4>
-                    <p class="text-gray-500 text-sm">View all your submitted reports</p>
-                </a>
-                <a href="{{ route('profile.edit') }}" class="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg p-6 shadow-sm border dark:border-gray-700 transition-colors">
-                    <div class="text-3xl mb-2">👤</div>
-                    <h4 class="font-semibold text-gray-900 dark:text-white">My Profile</h4>
-                    <p class="text-gray-500 text-sm">Update your information</p>
-                </a>
-            </div>
-
-            <!-- Reports Summary -->
-            @php
-                $reports = Auth::user()->reports()->latest()->take(5)->get();
-                $pendingCount = Auth::user()->reports()->where('status', 'Pending')->count();
-                $inProgressCount = Auth::user()->reports()->whereIn('status', ['Assigned', 'In_Progress'])->count();
-                $completedCount = Auth::user()->reports()->where('status', 'Completed')->count();
-            @endphp
-
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-6 border border-yellow-200 dark:border-yellow-800">
-                    <div class="text-3xl font-bold text-yellow-600">{{ $pendingCount }}</div>
-                    <div class="text-yellow-700 dark:text-yellow-400">Pending Reports</div>
-                </div>
-                <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-6 border border-blue-200 dark:border-blue-800">
-                    <div class="text-3xl font-bold text-blue-600">{{ $inProgressCount }}</div>
-                    <div class="text-blue-700 dark:text-blue-400">In Progress</div>
-                </div>
-                <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-6 border border-green-200 dark:border-green-800">
-                    <div class="text-3xl font-bold text-green-600">{{ $completedCount }}</div>
-                    <div class="text-green-700 dark:text-green-400">Completed</div>
-                </div>
-            </div>
-
-            <!-- Recent Reports -->
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 text-gray-900 dark:text-gray-100">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold">Recent Reports</h3>
-                        <a href="{{ route('reports.index') }}" class="text-indigo-600 hover:text-indigo-800 text-sm">View All →</a>
+            <!-- Action Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <!-- Submit Report -->
+                <a href="{{ route('reports.create') }}" 
+                   class="group relative rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200"
+                   style="background:#FFFFFF;border-color:#D7DDE5;">
+                    <div class="mb-4 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-blue-50 text-2xl">
+                        📝
                     </div>
+                    <h3 class="text-lg font-semibold mb-1" style="color:#1F4E79;">Submit New Report</h3>
+                    <p class="text-sm" style="color:#7F8C8D;">
+                        Found an issue? Submit a new maintenance request in seconds.
+                    </p>
+                    <div class="mt-4 flex items-center text-sm font-medium" style="color:#1ABC9C;">
+                        Get Started <span class="ml-1 transition-transform group-hover:translate-x-1">→</span>
+                    </div>
+                </a>
 
-                    @if($reports->isEmpty())
-                        <p class="text-gray-500 text-center py-8">No reports yet. <a href="{{ route('reports.create') }}" class="text-indigo-600 hover:underline">Submit your first report</a></p>
-                    @else
-                        <div class="space-y-3">
-                            @foreach($reports as $report)
-                                <a href="{{ route('reports.show', $report) }}" class="block p-4 border dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                    <div class="flex justify-between items-start">
-                                        <div>
-                                            <span class="font-medium">#{{ $report->id }}</span>
-                                            <span class="text-gray-600 dark:text-gray-400">{{ Str::limit($report->description, 50) }}</span>
-                                        </div>
-                                        <span class="px-2 py-1 text-xs rounded-full 
-                                            @if($report->status === 'Completed') bg-green-100 text-green-800
-                                            @elseif($report->status === 'In_Progress') bg-blue-100 text-blue-800
-                                            @elseif($report->status === 'Assigned') bg-purple-100 text-purple-800
-                                            @else bg-gray-100 text-gray-800 @endif">
-                                            {{ str_replace('_', ' ', $report->status) }}
-                                        </span>
-                                    </div>
-                                    <div class="text-sm text-gray-500 mt-1">{{ $report->created_at->diffForHumans() }}</div>
-                                </a>
-                            @endforeach
-                        </div>
-                    @endif
+                <!-- My Reports -->
+                <a href="{{ route('reports.index') }}" 
+                   class="group relative rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200"
+                   style="background:#FFFFFF;border-color:#D7DDE5;">
+                    <div class="mb-4 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-blue-50 text-2xl">
+                        📋
+                    </div>
+                    <h3 class="text-lg font-semibold mb-1" style="color:#1F4E79;">My Reports</h3>
+                    <p class="text-sm" style="color:#7F8C8D;">
+                        Track the status of your submitted issues and view history.
+                    </p>
+                    <div class="mt-4 flex items-center text-sm font-medium" style="color:#3498DB;">
+                        View All <span class="ml-1 transition-transform group-hover:translate-x-1">→</span>
+                    </div>
+                </a>
+
+                <!-- My Profile -->
+                <a href="{{ route('profile.edit') }}" 
+                   class="group relative rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200"
+                   style="background:#FFFFFF;border-color:#D7DDE5;">
+                    <div class="mb-4 inline-flex items-center justify-center w-12 h-12 rounded-lg bg-blue-50 text-2xl">
+                        👤
+                    </div>
+                    <h3 class="text-lg font-semibold mb-1" style="color:#1F4E79;">My Profile</h3>
+                    <p class="text-sm" style="color:#7F8C8D;">
+                        Update your personal information and preferences.
+                    </p>
+                    <div class="mt-4 flex items-center text-sm font-medium" style="color:#2C3E50;">
+                        Manage <span class="ml-1 transition-transform group-hover:translate-x-1">→</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Recent Reports Section -->
+            <div class="rounded-2xl border shadow-sm bg-white" style="border-color:#D7DDE5;">
+                <div class="p-6 border-b" style="border-color:#D7DDE5;">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-semibold" style="color:#2C3E50;">Recent Activity</h3>
+                        <a href="{{ route('reports.index') }}" class="text-sm font-medium hover:underline" style="color:#3498DB;">View Full History</a>
+                    </div>
                 </div>
+                
+                @if($reports->isEmpty())
+                    <div class="p-12 text-center">
+                        <div class="text-gray-400 mb-3 text-4xl">📭</div>
+                        <h4 class="text-lg font-medium text-gray-900">No reports filed yet</h4>
+                        <p class="text-gray-500 mt-1">When you spot an issue, submit a report to get it fixed.</p>
+                        <a href="{{ route('reports.create') }}" class="inline-block mt-4 px-4 py-2 rounded-lg text-sm font-semibold" 
+                           style="background:#1F4E79;color:#FFFFFF;">
+                            Submit First Report
+                        </a>
+                    </div>
+                @else
+                    <div class="divide-y" style="border-color:#eaeff5;">
+                        @foreach($reports as $report)
+                            <div class="p-4 hover:bg-gray-50 transition-colors flex items-center justify-between">
+                                <div class="flex items-start gap-4">
+                                    <div class="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
+                                        style="background:{{ $report->status === 'Completed' ? '#D1F2EB' : '#F5F7FA' }};
+                                               color:{{ $report->status === 'Completed' ? '#1ABC9C' : '#7F8C8D' }};">
+                                        #{{ $report->id }}
+                                    </div>
+                                    <div>
+                                        <h4 class="text-sm font-semibold text-gray-900">
+                                            {{ Str::limit($report->description, 60) }}
+                                        </h4>
+                                        <div class="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                                            <span>📅 {{ $report->created_at->diffForHumans() }}</span>
+                                            <span>•</span>
+                                            <span>{{ $report->room->block->block_name }} - {{ $report->room->room_name }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"
+                                        style="
+                                        @if($report->status === 'Completed') background:#D1F2EB;color:#1ABC9C;border-color:transparent
+                                        @elseif($report->status === 'In_Progress') background:#EBF5FB;color:#3498DB;border-color:transparent
+                                        @else background:#F5F7FA;color:#7F8C8D;border-color:#D7DDE5 @endif
+                                        ">
+                                        {{ str_replace('_', ' ', $report->status) }}
+                                    </span>
+                                    <a href="{{ route('reports.show', $report) }}" class="p-2 text-gray-400 hover:text-blue-600 transition-colors">
+                                        →
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
             @endif
         </div>
     </div>
-
 @endsection
