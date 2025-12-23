@@ -231,11 +231,12 @@
             </div>
 
             {{-- Filters --}}
-            <form class="mt-4 grid gap-3 lg:grid-cols-5" @submit.prevent="load">
+            <form class="mt-4 grid gap-3 lg:grid-cols-4" @submit.prevent="load(1)">
                 <input type="text" x-model="filters.q" placeholder="Search by Report ID"
+                    @input.debounce.400ms="load(1)"
                     class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50] focus:ring-2 focus:ring-[#1F4E79] focus:border-transparent" />
 
-                <select x-model="filters.status"
+                <select x-model="filters.status" @change="load(1)"
                     class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50] focus:ring-2 focus:ring-[#1F4E79] focus:border-transparent">
                     <option value="">All Status</option>
                     <template x-for="s in ['Assigned','In_Progress','Overdue']" :key="s">
@@ -243,7 +244,7 @@
                     </template>
                 </select>
 
-                <select x-model="filters.urgency"
+                <select x-model="filters.urgency" @change="load(1)"
                     class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50] focus:ring-2 focus:ring-[#1F4E79] focus:border-transparent">
                     <option value="">All Urgency</option>
                     <template x-for="u in ['High','Medium','Low']" :key="u">
@@ -251,17 +252,12 @@
                     </template>
                 </select>
 
-                <select x-model="filters.sort"
+                <select x-model="filters.sort" @change="load(1)"
                     class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50] focus:ring-2 focus:ring-[#1F4E79] focus:border-transparent">
                     <option value="due">Sort: Due date</option>
                     <option value="urgency">Sort: Urgency</option>
                     <option value="block">Sort: Block</option>
                 </select>
-
-                <button type="submit"
-                    class="rounded-lg px-4 py-2 font-semibold bg-[#1F4E79] text-white hover:bg-[#163a5f] transition">
-                    Apply Filters
-                </button>
             </form>
 
             {{-- Jobs table --}}
@@ -307,7 +303,7 @@
                             <tr class="border-t border-[#D7DDE5] hover:bg-[#F9FBFF] transition">
                                 <td class="px-3 py-2 font-semibold text-[#1F4E79]">
                                     <a :href="`/technician/tasks/${job.id}`" class="hover:underline"
-                                        x-text="'#'+job.id"></a>
+                                        x-text="''+job.id"></a>
                                 </td>
                                 <td class="px-3 py-2" x-text="job.reported_at"></td>
                                 <td class="px-3 py-2 font-semibold" x-text="job.block_name || '-'"></td>
@@ -796,6 +792,11 @@
                         const mesh = store.blockMeshes[name];
                         this.applyMeshState(mesh);
                     });
+
+                    const panel = document.getElementById('building-tasks-panel');
+                    if (panel) {
+                        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
                 },
 
                 resetCamera() {

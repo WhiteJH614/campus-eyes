@@ -42,25 +42,30 @@
                 </div>
             </div>
 
-            <form class="grid gap-3 lg:grid-cols-5 items-center rounded-xl bg-[#F8FBFF] border border-[#D7DDE5] p-3 shadow-sm" @submit.prevent="load">
-                <input type="date" x-model="filters.from" class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]" />
-                <input type="date" x-model="filters.to" class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]" />
-                <select x-model="filters.category" class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]">
+            <form class="grid gap-3 lg:grid-cols-5 items-center rounded-xl bg-[#F8FBFF] border border-[#D7DDE5] p-3 shadow-sm" @submit.prevent="load(1)">
+                <input type="date" x-model="filters.from" @change="load(1)"
+                    class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]" />
+                <input type="date" x-model="filters.to" @change="load(1)"
+                    class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]" />
+                <select x-model="filters.category" @change="load(1)"
+                    class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]">
                     <option value="">All Categories</option>
                     <template x-for="cat in categories" :key="cat.id">
                         <option :value="cat.id" x-text="cat.name"></option>
                     </template>
                 </select>
-                <select x-model="filters.block" class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]">
+                <select x-model="filters.block" @change="load(1)"
+                    class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]">
                     <option value="">Block</option>
                     <option>Block A</option>
                     <option>Block B</option>
                     <option>Block C</option>
                     <option>Block M</option>
                 </select>
-                <div class="grid sm:grid-cols-2 lg:grid-cols-1 gap-3">
-                    <input type="text" x-model="filters.q" placeholder="Search notes" class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]" />
-                    <button type="submit" class="rounded-lg px-4 py-2 font-semibold bg-[#1F4E79] text-white shadow-sm">Apply</button>
+                <div>
+                    <input type="text" x-model="filters.q" placeholder="Search notes"
+                        @input.debounce.400ms="load(1)"
+                        class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]" />
                 </div>
             </form>
 
