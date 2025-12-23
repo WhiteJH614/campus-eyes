@@ -142,10 +142,10 @@
                             <div class="w-5 h-5 rounded bg-yellow-400 border-2 border-yellow-600 shadow-sm"></div>
                             <span class="text-[#2C3E50] font-medium">Selected</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <div class="w-5 h-5 rounded bg-blue-400 border-2 border-blue-600 shadow-sm"></div>
-                            <span class="text-[#2C3E50] font-medium">Nearby zone</span>
-                        </div>
+                        <!-- <div class="flex items-center gap-2">
+                                <div class="w-5 h-5 rounded bg-blue-400 border-2 border-blue-600 shadow-sm"></div>
+                                <span class="text-[#2C3E50] font-medium">Nearby zone</span>
+                            </div> -->
                         <div class="flex items-center gap-2">
                             <div class="w-5 h-5 rounded bg-gray-400 border-2 border-gray-600 shadow-sm"></div>
                             <span class="text-[#2C3E50] font-medium">Other blocks</span>
@@ -192,9 +192,9 @@
                         <template x-for="task in focusTasks" :key="task.id">
                             <a :href="`/technician/tasks/${task.id}`"
                                 class="block rounded-lg border-2 p-3 hover:shadow-md transition-all duration-200" :class="{
-                                                'border-yellow-400 bg-yellow-50': isSelectedBlock(task),
-                                                'border-blue-300 bg-blue-50': isNearbyBlock(task)
-                                            }">
+                                                    'border-yellow-400 bg-yellow-50': isSelectedBlock(task),
+                                                    'border-blue-300 bg-blue-50': isNearbyBlock(task)
+                                                }">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-2">
                                         <span class="text-base" x-text="isSelectedBlock(task) ? '🟡' : '🔵'"></span>
@@ -360,13 +360,13 @@
 
     {{-- Three.js (module) loader, matching the report create view --}}
     <script type="importmap">
-        {
-            "imports": {
-                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            {
+                "imports": {
+                    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+                }
             }
-        }
-    </script>
+        </script>
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
