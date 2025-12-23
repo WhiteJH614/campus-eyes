@@ -206,11 +206,15 @@ class TechnicianController extends Controller
                 optional($job->room->block ?? null)->block_name ?? '',
                 optional($job->room)->room_name ?? '',
             ])->filter()->implode(', '));
+            $blockName = optional($job->room->block ?? null)->block_name ?? '-';
+            $roomName = optional($job->room)->room_name ?? '-';
 
             return [
                 'id' => $job->id,
                 'reported_at' => optional($job->created_at)?->format('d M Y H:i') ?? '-',
                 'location' => $location,
+                'block_name' => $blockName,
+                'room_name' => $roomName,
                 'category' => optional($job->category)->name ?? '-',
                 'urgency' => $job->urgency ?? '-',
                 'status' => $job->status ?? '-',

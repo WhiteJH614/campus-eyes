@@ -135,8 +135,8 @@
                                             #{{ $report->id }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                            <div class="font-medium">{{ $report->room->block->block_name }}</div>
-                                            <div class="text-xs text-gray-500">{{ $report->room->room_name }}</div>
+                                            <div class="font-medium">{{ $report->room?->block?->block_name ?? '-' }}</div>
+                                            <div class="text-xs text-gray-500">{{ $report->room?->room_name ?? '-' }}</div>
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm">
                                             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border"

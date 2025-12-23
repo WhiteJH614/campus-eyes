@@ -1,70 +1,71 @@
 @php
-    use Illuminate\Support\Str;
+use Illuminate\Support\Str;
 
-    $pageTitle = $pageTitle ?? 'Campus Eye Maintenance Reporting System';
+$pageTitle = $pageTitle ?? 'Campus Eye Maintenance Reporting System';
 
-    // Use Laravel auth user instead of manual session
-    $authUser = auth()->user();
+// Use Laravel auth user instead of manual session
+$authUser = auth()->user();
 
-    $name = $authUser?->name ?? 'Guest';
-    // In DB: 'Reporter', 'Technician', 'Admin'
-    $rawRole = $authUser?->role ?? null;
-    $role = $rawRole ? strtolower($rawRole) : ''; // reporter / technician / admin / ''
+$name = $authUser?->name ?? 'Guest';
+// In DB: 'Reporter', 'Technician', 'Admin'
+$rawRole = $authUser?->role ?? null;
+$role = $rawRole ? strtolower($rawRole) : ''; // reporter / technician / admin / ''
 
-    $breadcrumbs = $breadcrumbs ?? [];
+$breadcrumbs = $breadcrumbs ?? [];
 
-    $roleLinks = [
-        'reporter' => [
-            ['label' => 'My Dashboard', 'url' => '/reporter/dashboard'],
-            ['label' => 'New Report', 'url' => '/reports/create'],
-            ['label' => 'My Reports', 'url' => '/reports' ],
-            ['label' => 'My Profile', 'url' => '/profile'],
-        ],
-        'technician' => [
-            ['label' => 'Task Dashboard', 'url' => '/technician/dashboard'],
-            ['label' => 'Assigned Jobs', 'url' => '/technician/tasks'],
-            ['label' => 'Completed Jobs', 'url' => '/technician/completed'],
-            ['label' => 'Profile', 'url' => '/technician/profile'],
-        ],
-        'admin' => [
-            ['label' => 'Admin Dashboard', 'url' => '/admin/dashboard'],
-            ['label' => 'All Reports', 'url' => '/admin/reports'],
-            ['label' => 'Technicians', 'url' => '/admin/technicians'],
-            ['label' => 'Locations', 'url' => '/admin/locations'],
-            ['label' => 'Categories', 'url' => '/admin/categories'],
-            ['label' => 'Analytics', 'url' => '/admin/analytics'],
-        ],
-    ];
+$roleLinks = [
+    'reporter' => [
+        ['label' => 'My Dashboard', 'url' => '/reporter/dashboard'],
+        ['label' => 'New Report', 'url' => '/reports/create'],
+        ['label' => 'My Reports', 'url' => '/reports'],
+        ['label' => 'My Profile', 'url' => '/profile'],
+    ],
+    'technician' => [
+        ['label' => 'Task Dashboard', 'url' => '/technician/dashboard'],
+        ['label' => 'Assigned Jobs', 'url' => '/technician/tasks'],
+        ['label' => 'Completed Jobs', 'url' => '/technician/completed'],
+        ['label' => 'Profile', 'url' => '/technician/profile'],
+    ],
+    'admin' => [
+        ['label' => 'Admin Dashboard', 'url' => '/admin/dashboard'],
+        ['label' => 'All Reports', 'url' => '/admin/reports'],
+        ['label' => 'Technicians', 'url' => '/admin/technicians'],
+        ['label' => 'Locations', 'url' => '/admin/locations'],
+        ['label' => 'Categories', 'url' => '/admin/categories'],
+        ['label' => 'Analytics', 'url' => '/admin/analytics'],
+    ],
+];
 
-    // Menu for guests (not logged in)
-    $guestLinks = [
-        ['label' => 'Home', 'url' => '/'],
-        // ['label' => 'Login', 'url' => route('login')],
-        // ['label' => 'Register', 'url' => route('register')],
-    ];
+// Menu for guests (not logged in)
+$guestLinks = [
+    ['label' => 'Home', 'url' => '/'],
+    // ['label' => 'Login', 'url' => route('login')],
+    // ['label' => 'Register', 'url' => route('register')],
+];
 
-    // Decide which links to show in the main nav
-    if ($authUser && isset($roleLinks[$role])) {
-        $links = $roleLinks[$role];
-    } else {
-        $links = $guestLinks;
-    }
+// Decide which links to show in the main nav
+if ($authUser && isset($roleLinks[$role])) {
+    $links = $roleLinks[$role];
+} else {
+    $links = $guestLinks;
+}
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Campus Eye Maintenance Reporting System">
-    <title>{{ $pageTitle }}</title>
-    <link rel="icon" type="image/png" href="/favicon.png">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="Campus Eye Maintenance Reporting System">
+        <title>{{ $pageTitle }}</title>
+        <link rel="icon" type="image/png" href="/favicon.png">
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    </head>
 
 <body class="min-h-screen" style="background:#F5F7FA;color:#2C3E50;">
     <!-- <a href="#main-content"
@@ -124,7 +125,7 @@
                         </div>
                         <div class="hidden sm:flex items-center gap-3 text-sm">
                             <!-- <a href="/profile" class="hover:underline" style="color:#1ABC9C;">Profile</a>
-                            <a href="/change-password" class="hover:underline" style="color:#1ABC9C;">Change Password</a> -->
+                                <a href="/change-password" class="hover:underline" style="color:#1ABC9C;">Change Password</a> -->
                             {{-- If your logout route is POST, wrap in a form instead --}}
                             <form method="POST" action="{{ route('logout') }}" class="inline">
                                 @csrf
@@ -272,6 +273,7 @@
         })();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="resources\js\app.js"></script>
     @stack('scripts')
 </body>
 
