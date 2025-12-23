@@ -50,7 +50,8 @@ class Report extends Model
 
     public function room(): BelongsTo
     {
-        return $this->belongsTo(Room::class, 'id');
+        // rooms.id -> reports.room_id
+        return $this->belongsTo(Room::class, 'room_id', 'id');
     }
 
     public function attachments(): HasMany
