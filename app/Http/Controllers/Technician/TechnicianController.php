@@ -619,7 +619,7 @@ class TechnicianController extends Controller
             ->where('technician_id', $user->id)
             ->findOrFail($id);
 
-        $before = optional($job->attachments->firstWhere('attachment_type', 'REPORTER_PROOF'))->file_path;
+        $beforeAttachment = $job->attachments->firstWhere('attachment_type', 'REPORTER_PROOF');
         $afterAttachments = $job->attachments
             ->where('attachment_type', 'TECHNICIAN_PROOF')
             ->map(fn($a) => [
@@ -647,7 +647,12 @@ class TechnicianController extends Controller
                 ],
                 'category' => optional($job->category)->name,
                 'attachments' => [
-                    'reporter_proof' => $before ? asset('storage/' . $before) : null,
+                    'reporter_proof' => $beforeAttachment
+                        ? [
+                            'url' => asset('storage/' . $beforeAttachment->file_path),
+                            'uploaded_at' => $beforeAttachment->uploaded_at,
+                        ]
+                        : null,
                     'technician_proofs' => $afterAttachments,
                 ],
             ],

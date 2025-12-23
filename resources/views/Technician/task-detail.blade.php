@@ -75,7 +75,9 @@
                     <div class="rounded-lg border aspect-video flex items-center justify-center overflow-hidden"
                         style="border-color:#D7DDE5;background:#F5F7FA;">
                         <template x-if="beforePhoto">
-                            <img :src="beforePhoto" alt="Before photo" class="h-full w-full object-cover">
+                            <img :src="beforePhoto.url" alt="Before photo"
+                                class="h-full w-full object-cover cursor-zoom-in"
+                                @click="openLightbox([beforePhoto], 0)">
                         </template>
                         <template x-if="!beforePhoto">
                             <span class="text-sm" style="color:#000000;">No photo uploaded</span>
@@ -466,7 +468,17 @@
                             category: data.category,
                         };
 
-                        this.beforePhoto = data.attachments?.reporter_proof || null;
+                        const reporterProof = data.attachments?.reporter_proof || null;
+                        if (reporterProof) {
+                            this.beforePhoto = typeof reporterProof === 'string'
+                                ? { url: reporterProof, uploaded_at: null }
+                                : {
+                                    url: reporterProof.url || '',
+                                    uploaded_at: reporterProof.uploaded_at || null,
+                                };
+                        } else {
+                            this.beforePhoto = null;
+                        }
                         this.afterPhotos = (data.attachments?.technician_proofs || []).map(p => ({
                             id: p.id ?? 0,
                             url: p.url,
