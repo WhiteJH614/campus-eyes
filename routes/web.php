@@ -24,6 +24,17 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', function () {
+        $user = auth()->user();
+        $role = strtolower($user->role ?? '');
+
+        return match ($role) {
+            'technician' => redirect()->route('technician.dashboard'),
+            'reporter' => redirect()->route('reporter.dashboard'),
+            default => view('dashboard'),
+        };
+    })->name('dashboard');
+
     // Generic logged-in dashboard (used by Breeze auth scaffolding)
     Route::get('/reporter/dashboard', function () {
         return view('reports.dashboard');
@@ -92,4 +103,3 @@ Route::middleware(['auth', 'role:Reporter'])->group(function () {
 });
 
 require __DIR__.'/auth.php';
-
