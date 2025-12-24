@@ -14,7 +14,7 @@
         <div class="rounded-2xl shadow-sm border border-[#D7DDE5] bg-white p-6">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <h1 class="text-2xl font-semibold text-[#2C3E50]">Assigned Jobs</h1>
+                    <h1 class="text-2xl font-semibold text-[#2C3E50]">Campus Maps</h1>
                     <p class="text-sm text-[#7F8C8D]">
                         TAR UMT Penang Branch - 3D Campus View
                     </p>
@@ -143,9 +143,9 @@
                             <span class="text-[#2C3E50] font-medium">Selected</span>
                         </div>
                         <!-- <div class="flex items-center gap-2">
-                                <div class="w-5 h-5 rounded bg-blue-400 border-2 border-blue-600 shadow-sm"></div>
-                                <span class="text-[#2C3E50] font-medium">Nearby zone</span>
-                            </div> -->
+                                                <div class="w-5 h-5 rounded bg-blue-400 border-2 border-blue-600 shadow-sm"></div>
+                                                <span class="text-[#2C3E50] font-medium">Nearby zone</span>
+                                            </div> -->
                         <div class="flex items-center gap-2">
                             <div class="w-5 h-5 rounded bg-gray-400 border-2 border-gray-600 shadow-sm"></div>
                             <span class="text-[#2C3E50] font-medium">Other blocks</span>
@@ -192,9 +192,9 @@
                         <template x-for="task in focusTasks" :key="task.id">
                             <a :href="`/technician/tasks/${task.id}`"
                                 class="block rounded-lg border-2 p-3 hover:shadow-md transition-all duration-200" :class="{
-                                                    'border-yellow-400 bg-yellow-50': isSelectedBlock(task),
-                                                    'border-blue-300 bg-blue-50': isNearbyBlock(task)
-                                                }">
+                                                                    'border-yellow-400 bg-yellow-50': isSelectedBlock(task),
+                                                                    'border-blue-300 bg-blue-50': isNearbyBlock(task)
+                                                                }">
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center gap-2">
                                         <span class="text-base" x-text="isSelectedBlock(task) ? '🟡' : '🔵'"></span>
@@ -220,20 +220,28 @@
                         </template>
                     </div>
 
-                    <div class="mt-3 pt-3 border-t border-[#D7DDE5]" x-show="focusArea">
-                        <div class="text-xs text-[#7F8C8D] bg-[#F0F9FF] p-2 rounded-lg border border-[#BFDBFE]">
-                            <span class="font-semibold text-[#1F4E79]">💡 Tip:</span>
-                            Complete tasks in <span class="text-[#1F4E79] font-semibold" x-text="focusArea"></span> first,
-                            then move to nearby blocks.
-                        </div>
-                    </div>
+                    <!-- <div class="mt-3 pt-3 border-t border-[#D7DDE5]" x-show="focusArea">
+                                        <div class="text-xs text-[#7F8C8D] bg-[#F0F9FF] p-2 rounded-lg border border-[#BFDBFE]">
+                                            <span class="font-semibold text-[#1F4E79]">💡 Tip:</span>
+                                            Complete tasks in <span class="text-[#1F4E79] font-semibold" x-text="focusArea"></span> first,
+                                            then move to nearby blocks.
+                                        </div>
+                                    </div> -->
                 </div>
             </div>
 
+
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm border border-[#D7DDE5] p-6">
+            <div>
+                <h1 class="text-2xl font-semibold text-[#2C3E50]">Assigned Jobs</h1>
+                <p class="text-sm text-[#7F8C8D]">
+                    TAR UMT Penang Branch - List of your assigned maintenance jobs
+                </p>
+            </div>
             {{-- Filters --}}
             <form class="mt-4 grid gap-3 lg:grid-cols-4" @submit.prevent="load(1)">
-                <input type="text" x-model="filters.q" placeholder="Search by Report ID"
-                    @input.debounce.400ms="load(1)"
+                <input type="text" x-model="filters.q" placeholder="Search by Report ID" @input.debounce.400ms="load(1)"
                     class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50] focus:ring-2 focus:ring-[#1F4E79] focus:border-transparent" />
 
                 <select x-model="filters.status" @change="load(1)"
@@ -302,8 +310,7 @@
                         <template x-for="job in jobs" :key="job.id">
                             <tr class="border-t border-[#D7DDE5] hover:bg-[#F9FBFF] transition">
                                 <td class="px-3 py-2 font-semibold text-[#1F4E79]">
-                                    <a :href="`/technician/tasks/${job.id}`" class="hover:underline"
-                                        x-text="''+job.id"></a>
+                                    <a :href="`/technician/tasks/${job.id}`" class="hover:underline" x-text="''+job.id"></a>
                                 </td>
                                 <td class="px-3 py-2" x-text="job.reported_at"></td>
                                 <td class="px-3 py-2 font-semibold" x-text="job.block_name || '-'"></td>
@@ -356,13 +363,13 @@
 
     {{-- Three.js (module) loader, matching the report create view --}}
     <script type="importmap">
-            {
-                "imports": {
-                    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-                    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-                }
-            }
-        </script>
+                            {
+                                "imports": {
+                                    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                                    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+                                }
+                            }
+                        </script>
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';

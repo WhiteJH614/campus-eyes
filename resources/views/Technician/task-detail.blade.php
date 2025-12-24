@@ -174,13 +174,14 @@
             <template x-if="job.status !== 'Completed'">
                 <div class="grid sm:grid-cols-2 gap-4">
                     <form method="post" :action="`/technician/tasks/${jobId}/status`" x-data="{ rejectionRequired: false }"
-                        onsubmit="return confirm('Update status?');" class="rounded-2xl border p-4 space-y-2"
+                        @submit="if (!confirm(rejectionRequired ? 'Reject this job?' : 'Update status?')) $event.preventDefault()"
+                        class="rounded-2xl border p-4 space-y-2"
                         style="border-color:#D7DDE5;background:#F9FBFF;">
                         @csrf
                         <div class="text-sm font-semibold" style="color:#000000;">Quick status</div>
 
                         <button type="submit" name="status" value="In_Progress" :disabled="job.status === 'In_Progress'"
-                            class="w-full rounded-xl px-4 py-3 font-semibold cursor-pointer"
+                            class="w-full rounded-xl px-4 py-3 font-semibold cursor-pointer transition hover:brightness-95"
                             :style="`background:${job.status === 'In_Progress' ? '#D7DDE5' : '#3498DB'};color:#FFFFFF;`"
                             @click="rejectionRequired = false">
                             <span
@@ -188,7 +189,7 @@
                         </button>
 
                         <button type="submit" name="status" value="Pending" :disabled="job.status === 'Pending'"
-                            class="w-full rounded-xl px-4 py-3 font-semibold cursor-pointer"
+                            class="w-full rounded-xl px-4 py-3 font-semibold cursor-pointer transition hover:brightness-95"
                             :style="`background:${job.status === 'Pending' ? '#D7DDE5' : '#E74C3C'};color:#FFFFFF;`"
                             @click="rejectionRequired = true">
                             Reject / Set Pending

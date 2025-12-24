@@ -73,7 +73,9 @@
                         </div>
                         <div class="space-y-2">
                             <label for="email" class="text-sm font-medium text-[#2C3E50]">Email</label>
-                            <input id="email" name="email" type="email" x-model="form.email" class="w-full rounded-lg px-3 py-2 border" style="border-color:#D7DDE5;color:#2C3E50;background:#FFFFFF;" required>
+                            <input id="email" type="email" x-model="form.email" readonly aria-readonly="true"
+                                class="w-full rounded-lg px-3 py-2 border cursor-not-allowed"
+                                style="border-color:#D7DDE5;color:#2C3E50;background:#F5F7FA;">
                         </div>
                     </div>
 
@@ -251,9 +253,7 @@
                 },
                 async saveProfile() {
                     this.saveMessage = '';
-                    const payload = {
-                        ...this.form,
-                    };
+                    const { email, ...payload } = this.form;
                     const res = await fetch('/api/tech/profile', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content },
