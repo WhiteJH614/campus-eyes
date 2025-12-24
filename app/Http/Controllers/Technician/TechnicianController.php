@@ -163,7 +163,7 @@ class TechnicianController extends Controller
 
         $query = Report::with(['room.block.campus', 'category'])
             ->where('technician_id', $user->id)
-            ->whereIn('status', ['Pending', 'Assigned', 'In_Progress']);
+            ->whereIn('status', ['Assigned', 'In_Progress']);
 
         if ($request->filled('q')) {
             $query->where('id', 'like', '%' . trim($request->q) . '%');
