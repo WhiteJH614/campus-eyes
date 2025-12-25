@@ -15,15 +15,24 @@ class UserController extends Controller
 
         return view('admin.users.index', compact('users'));
     }
-    
+
     public function destroy($id)
-{
-    $user = User::where('id', $id)
-        ->where('role', 'Student')
-        ->firstOrFail();
+    {
+        $user = User::findOrFail($id);
 
-    $user->delete();
+        // ✅ 验证是否是 Reporter
+        if ($user->role !== 'Reporter') {
+            return back()->with('error', 'Invalid user type.');
+        }
 
-    return back()->with('success', 'Student deleted');
-}
+        // ✅ 检查关联的报告（如果 User 模型有 reports() 关系）
+        if ($user->reports()->exists()) {
+            $reportCount = $user->reports()->count();
+            return back()->with('error', "Cannot delete this student. They have {$reportCount} report(s).");
+        }
+
+        $user->delete();
+
+        return back()->with('success', 'Student deleted successfully');
+    }
 }
