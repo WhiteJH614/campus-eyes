@@ -106,15 +106,19 @@ class TechnicianController extends Controller
             ->whereBetween('completed_at', [$startOfMonth, $endOfMonth])
             ->count();
 
+        // Fixed: Only count as overdue if due_at is NOT NULL and has passed
         $overdueCount = Report::where('technician_id', $technicianId)
             ->where('status', '!=', 'Completed')
-            ->whereRaw('COALESCE(due_at, created_at) < ?', [$now])
+            ->whereNotNull('due_at')
+            ->where('due_at', '<', $now)
             ->count();
 
+        // Fixed: Only get overdue reports with actual due dates
         $nextOverdue = Report::where('technician_id', $technicianId)
             ->where('status', '!=', 'Completed')
-            ->whereRaw('COALESCE(due_at, created_at) < ?', [$now])
-            ->orderByRaw('COALESCE(due_at, created_at)')
+            ->whereNotNull('due_at')
+            ->where('due_at', '<', $now)
+            ->orderBy('due_at')
             ->first();
 
         $recent = Report::where('technician_id', $technicianId)
@@ -148,6 +152,7 @@ class TechnicianController extends Controller
             'recent' => $recent,
         ];
     }
+
 
     public function tasksApi(Request $request)
     {
@@ -201,10 +206,9 @@ class TechnicianController extends Controller
 
         $jobs = $paginator->map(function (Report $job) use ($now) {
             $due = $job->due_at;
-            $isOverdue = ($job->status === 'Overdue') || ($due && $due->lt($now) && $job->status !== 'Completed');
-            $overdueHuman = $isOverdue && $due ? $due->diffForHumans($now, true) : null;
+            // Fixed: Check if task has due date AND is past due
+            $isOverdue = $due && $due->lt($now) && $job->status !== 'Completed';
 
-            // Fixed: Removed campus reference since it doesn't exist
             $location = trim(collect([
                 optional($job->room->block ?? null)->block_name ?? '',
                 optional($job->room)->room_name ?? '',
@@ -212,6 +216,10 @@ class TechnicianController extends Controller
 
             $blockName = optional($job->room->block ?? null)->block_name ?? '-';
             $roomName = optional($job->room)->room_name ?? '-';
+
+            // Fixed: Return "Overdue" as status when task is overdue
+            $displayStatus = $isOverdue ? 'Overdue' : ($job->status ?? '-');
+            $overdueHuman = $isOverdue ? $due->diffForHumans($now) : null;
 
             return [
                 'id' => $job->id,
@@ -221,10 +229,10 @@ class TechnicianController extends Controller
                 'room_name' => $roomName,
                 'category' => optional($job->category)->name ?? '-',
                 'urgency' => $job->urgency ?? '-',
-                'status' => $job->status ?? '-',
-                'due_at' => $job->due_at?->format('d M Y H:i') ?? '-',
+                'status' => $displayStatus,  // Shows "Overdue" if past due
+                'due_at' => $job->due_at?->format('d M Y H:i') ?? 'No due date',
                 'is_overdue' => $isOverdue,
-                'overdue_human' => $overdueHuman,
+                'overdue_human' => $overdueHuman,  // e.g., "2 days ago"
             ];
         });
 
