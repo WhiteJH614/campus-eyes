@@ -28,7 +28,7 @@ Route::prefix('v1')->group(function () {
 
 
 // Technician Dashboard and Profile APIs
-
+// Author: Lee Jia Hui
 Route::middleware('web')->get(
     '/technician/dashboard',
     [TechnicianController::class, 'dashboardApi']

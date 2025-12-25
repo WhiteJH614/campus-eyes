@@ -125,6 +125,9 @@ Route::middleware(['auth', 'role:Admin'])
         )->name('admin.students.delete');
     });
 
+
+use App\Http\Controllers\Admin\AdminController;
+
 Route::prefix('admin')->middleware('auth')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -156,8 +159,24 @@ Route::prefix('admin')->middleware('auth')->group(function () {
 
     Route::get('/attachments/{attachment}', [AttachmentController::class, 'show'])
         ->name('admin.attachments.show');
+
+    // Technicians
+    Route::get('/technicians', [TechnicianController::class, 'index'])
+        ->name('admin.technicians.index');
+    Route::get('/technicians/add', [AdminController::class, 'addTechnician'])
+        ->name('admin.add_technician');
+    Route::post('/technicians/add', [AdminController::class, 'createTechnicianApi'])
+        ->name('admin.technicians.create');
+    Route::post('/technicians', [TechnicianController::class, 'store'])
+        ->name('admin.technicians.store');
+    Route::delete('/technicians/{id}', [TechnicianController::class, 'destroy'])
+        ->name('admin.technicians.destroy');
+
+
 });
 
+
+//Author: Lee Jia Hui
 Route::prefix('technician')->middleware(['auth', 'technician'])->group(function () {
     // Use TechController (the alias) instead of TechnicianController
     Route::get('/dashboard', [TechController::class, 'dashboard'])->name('technician.dashboard');
