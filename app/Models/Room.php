@@ -10,19 +10,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Room extends Model
 {
     use HasFactory;
-    /**
-     * The primary key for the model.
-     */
-    protected $primaryKey = 'id';
 
-    /**
-     * Indicates if the model should be timestamped.
-     */
+    protected $primaryKey = 'room_id';
     public $timestamps = false;
 
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
         'block_id',
         'floor_number',
@@ -30,18 +21,18 @@ class Room extends Model
     ];
 
     /**
-     * Get the block that this room belongs to.
+     * Block this room belongs to.
      */
     public function block(): BelongsTo
     {
-        return $this->belongsTo(Block::class, 'block_id', 'id');
+        return $this->belongsTo(Block::class, 'block_id');
     }
 
     /**
-     * Get the reports for this room.
+     * Reports related to this room.
      */
     public function reports(): HasMany
     {
-        return $this->hasMany(Report::class, 'room_id', 'id');
+        return $this->hasMany(Report::class, 'room_id');
     }
 }

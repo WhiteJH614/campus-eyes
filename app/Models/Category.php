@@ -16,10 +16,10 @@ class Category extends Model
     ];
 
     /**
-     * Get the reports in this category.
+     * Reports under this category.
      */
     public function reports(): HasMany
     {
-        return $this->hasMany(Report::class, 'category_id');
+        return $this->hasMany(Report::class);
     }
 }

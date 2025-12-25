@@ -17,61 +17,50 @@ class Report extends Model
         'room_id',
         'category_id',
         'description',
-        'urgency',          // Low / Medium / High
-        'status',           // Pending / Assigned / In_Progress / Completed
-        'resolution_notes', // 技术员填写的处理说明
+        'urgency',
+        'status',
+        'resolution_notes',
         'due_at',
         'completed_at',
     ];
 
-    protected $casts = [
-        'due_at' => 'datetime',
-        'completed_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
-
+    /**
+     * Reporter who submitted the report.
+     */
     public function reporter(): BelongsTo
     {
-        // users.id -> reports.reporter_id
         return $this->belongsTo(User::class, 'reporter_id');
     }
 
+    /**
+     * Technician assigned to the report.
+     */
     public function technician(): BelongsTo
     {
-        // users.id -> reports.technician_id
         return $this->belongsTo(User::class, 'technician_id');
     }
 
-    public function category(): BelongsTo
-    {
-        return $this->belongsTo(Category::class, 'category_id');
-    }
-
+    /**
+     * Room where the issue is reported.
+     */
     public function room(): BelongsTo
     {
-        // rooms.id -> reports.room_id
-        return $this->belongsTo(Room::class, 'room_id', 'id');
+        return $this->belongsTo(Room::class, 'room_id');
     }
 
+    /**
+     * Category of the report.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * Attachments related to the report.
+     */
     public function attachments(): HasMany
     {
-        return $this->hasMany(Attachment::class, 'report_id');
-    }
-
-    /**
-     * Scope to get reports by status.
-     */
-    public function scopeStatus($query, string $status)
-    {
-        return $query->where('status', $status);
-    }
-
-    /**
-     * Scope to get reports by urgency.
-     */
-    public function scopeUrgency($query, string $urgency)
-    {
-        return $query->where('urgency', $urgency);
+        return $this->hasMany(Attachment::class);
     }
 }
