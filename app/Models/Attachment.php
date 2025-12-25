@@ -20,6 +20,10 @@ class Attachment extends Model
         'attachment_type',
     ];
 
+    protected $casts = [
+        'uploaded_at' => 'datetime',
+    ];
+
     /**
      * Report this attachment belongs to.
      */
