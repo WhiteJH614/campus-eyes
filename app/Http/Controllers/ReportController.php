@@ -11,12 +11,21 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
+/**
+ * Class ReportController
+ * 
+ * Controller for managing reports by the reporter.
+ * 
+ * @author Tan Jun Yan
+ */
 class ReportController extends Controller
 {
     /**
-     * Display a listing of the user's reports.
+     * Display a listing of the resource.
      */
     public function index(Request $request): View
     {

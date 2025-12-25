@@ -196,6 +196,7 @@ Route::get('/db-test', function () {
 });
 
 // Reporter Routes (protected by auth and role middleware)
+// Author: Tan Jun Yan
 Route::middleware(['auth', 'role:Reporter'])->group(function () {
     Route::get('/reporter/dashboard', function () {
         return view('reports.dashboard');
