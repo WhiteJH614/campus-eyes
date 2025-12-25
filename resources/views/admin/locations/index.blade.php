@@ -1,3 +1,5 @@
+<!-- Author: Ivan Goh Shern Rune -->
+
 @extends('admin.layouts.app')
 
 @section('content')
@@ -39,7 +41,7 @@
         <strong>{{ $block->block_name }}</strong>
 
         @php
-            $grouped = $block->rooms->groupBy('floor_number');
+    $grouped = $block->rooms->groupBy('floor_number');
         @endphp
 
         @foreach($grouped as $floor => $rooms)
