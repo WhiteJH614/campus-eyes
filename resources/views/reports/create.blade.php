@@ -306,7 +306,7 @@
         let clickableObjects = [];
         let hoveredObject = null;
 
-        loader.load('{{ asset("campus.glb") }}', (gltf) => {
+        loader.load('{{ asset("campus_TanJunYan.glb") }}', (gltf) => {
             const model = gltf.scene;
             scene.add(model);
 

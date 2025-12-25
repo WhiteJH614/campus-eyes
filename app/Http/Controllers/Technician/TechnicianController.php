@@ -161,7 +161,7 @@ class TechnicianController extends Controller
 
         $now = Carbon::now('Asia/Kuala_Lumpur');
 
-        $query = Report::with(['room.block.campus', 'category'])
+        $query = Report::with(['room.block', 'category'])
             ->where('technician_id', $user->id)
             ->whereIn('status', ['Assigned', 'In_Progress']);
 
@@ -201,11 +201,13 @@ class TechnicianController extends Controller
             $due = $job->due_at;
             $isOverdue = ($job->status === 'Overdue') || ($due && $due->lt($now) && $job->status !== 'Completed');
             $overdueHuman = $isOverdue && $due ? $due->diffForHumans($now, true) : null;
+
+            // Fixed: Removed campus reference since it doesn't exist
             $location = trim(collect([
-                optional(optional($job->room)->block)->campus->campus_name ?? '',
                 optional($job->room->block ?? null)->block_name ?? '',
                 optional($job->room)->room_name ?? '',
             ])->filter()->implode(', '));
+
             $blockName = optional($job->room->block ?? null)->block_name ?? '-';
             $roomName = optional($job->room)->room_name ?? '-';
 
@@ -236,6 +238,7 @@ class TechnicianController extends Controller
             ],
         ]);
     }
+
 
     public function completedApi(Request $request)
     {
@@ -615,7 +618,7 @@ class TechnicianController extends Controller
             return response()->json(['status' => 403, 'message' => 'Forbidden (Technician only)', 'data' => null], 403);
         }
 
-        $job = Report::with(['room.block.campus', 'category', 'attachments'])
+        $job = Report::with(['room.block', 'category', 'attachments'])
             ->where('technician_id', $user->id)
             ->findOrFail($id);
 

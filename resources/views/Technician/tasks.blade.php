@@ -388,7 +388,7 @@
                 blocks: [],
                 pagination: { current_page: 1, last_page: 1, total: 0 },
                 filters: { q: '', status: '', urgency: '', sort: 'due' },
-                campusModelUrl: '{{ asset("campus.glb") }}',
+                campusModelUrl: '{{ asset("campus_TanJunYan.glb") }}',
                 blockMapping: {
                     Admin: 'Admin',
                     BlockA: 'Block A',

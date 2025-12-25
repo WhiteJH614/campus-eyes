@@ -22,6 +22,17 @@ class Report extends Model
         'resolution_notes',
         'due_at',
         'completed_at',
+        'assigned_at',
+    ];
+
+    /**
+     * Cast attributes to native types.
+     * This ensures datetime fields are automatically converted to Carbon instances.
+     */
+    protected $casts = [
+        'due_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'assigned_at' => 'datetime',
     ];
 
     /**
