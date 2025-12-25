@@ -1,5 +1,5 @@
 <?php
-
+// Author: Lee Jia Hui
 namespace App\Http\Middleware;
 
 use Closure;
