@@ -1,5 +1,5 @@
 <?php
-
+// Author: Tan Jun Yan
 namespace App\Observers;
 
 use App\Mail\NewReportNotification;
