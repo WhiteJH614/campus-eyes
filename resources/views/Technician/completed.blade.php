@@ -1,3 +1,4 @@
+<!-- author: Lee Jia Hui -->
 @extends('layouts.app')
 
 @php
@@ -25,24 +26,29 @@
             </div>
 
             <div class="grid gap-3 sm:grid-cols-3">
-                <div class="rounded-2xl border border-transparent bg-gradient-to-r from-[#1F4E79] to-[#3498DB] p-4 text-white shadow">
+                <div
+                    class="rounded-2xl border border-transparent bg-gradient-to-r from-[#1F4E79] to-[#3498DB] p-4 text-white shadow">
                     <div class="text-sm opacity-80">Completed tasks</div>
                     <div class="text-2xl font-semibold mt-1" x-text="summary.total"></div>
                     <p class="text-xs opacity-80 mt-2">Total jobs closed in the selected window.</p>
                 </div>
-                <div class="rounded-2xl border border-[#D7DDE5] bg-gradient-to-r from-[#27AE60] to-[#2ECC71] p-4 text-white shadow">
+                <div
+                    class="rounded-2xl border border-[#D7DDE5] bg-gradient-to-r from-[#27AE60] to-[#2ECC71] p-4 text-white shadow">
                     <div class="text-sm opacity-80">High urgency</div>
                     <div class="text-2xl font-semibold mt-1" x-text="summary.high_urgency || 0"></div>
                     <p class="text-xs opacity-80 mt-2">Closed high urgency tasks.</p>
                 </div>
-                <div class="rounded-2xl border border-[#D7DDE5] bg-gradient-to-r from-[#34495E] to-[#2C3E50] p-4 text-white shadow">
+                <div
+                    class="rounded-2xl border border-[#D7DDE5] bg-gradient-to-r from-[#34495E] to-[#2C3E50] p-4 text-white shadow">
                     <div class="text-sm opacity-80">Avg completion time</div>
                     <div class="text-2xl font-semibold mt-1" x-text="summary.avg_time || '-'"></div>
                     <p class="text-xs opacity-80 mt-2">Time spent per task (avg).</p>
                 </div>
             </div>
 
-            <form class="grid gap-3 lg:grid-cols-5 items-center rounded-xl bg-[#F8FBFF] border border-[#D7DDE5] p-3 shadow-sm" @submit.prevent="load(1)">
+            <form
+                class="grid gap-3 lg:grid-cols-5 items-center rounded-xl bg-[#F8FBFF] border border-[#D7DDE5] p-3 shadow-sm"
+                @submit.prevent="load(1)">
                 <input type="date" x-model="filters.from" @change="load(1)"
                     class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]" />
                 <input type="date" x-model="filters.to" @change="load(1)"
@@ -63,8 +69,7 @@
                     <option>Block M</option>
                 </select>
                 <div>
-                    <input type="text" x-model="filters.q" placeholder="Search notes"
-                        @input.debounce.400ms="load(1)"
+                    <input type="text" x-model="filters.q" placeholder="Search notes" @input.debounce.400ms="load(1)"
                         class="rounded-lg px-3 py-2 border border-[#D7DDE5] bg-white text-[#2C3E50]" />
                 </div>
             </form>
@@ -91,10 +96,15 @@
                     </thead>
                     <tbody class="text-[#2C3E50] divide-y divide-[#D7DDE5]">
                         <template x-if="loading">
-                            <tr><td colspan="14" class="px-3 py-4 text-center text-[#7F8C8D]">Loading...</td></tr>
+                            <tr>
+                                <td colspan="14" class="px-3 py-4 text-center text-[#7F8C8D]">Loading...</td>
+                            </tr>
                         </template>
                         <template x-if="!loading && rows.length === 0">
-                            <tr><td colspan="14" class="px-3 py-4 text-center text-[#7F8C8D]">No completed tasks found for the selected filters.</td></tr>
+                            <tr>
+                                <td colspan="14" class="px-3 py-4 text-center text-[#7F8C8D]">No completed tasks found for
+                                    the selected filters.</td>
+                            </tr>
                         </template>
                         <template x-for="row in rows" :key="row.id">
                             <tr class="bg-white">
@@ -104,16 +114,17 @@
                                 <td class="px-3 py-2" x-text="row.category"></td>
                                 <td class="px-3 py-2 text-[#2C3E50]" x-text="row.description"></td>
                                 <td class="px-3 py-2">
-                                    <span class="px-2 py-1 rounded-full text-xs font-semibold" :style="urgStyle(row.urgency)" x-text="row.urgency"></span>
+                                    <span class="px-2 py-1 rounded-full text-xs font-semibold"
+                                        :style="urgStyle(row.urgency)" x-text="row.urgency"></span>
                                 </td>
                                 <td class="px-3 py-2">
-                                    <span class="px-2 py-1 rounded-full text-xs font-semibold" style="background:#27AE60;color:#FFFFFF;" x-text="row.status"></span>
+                                    <span class="px-2 py-1 rounded-full text-xs font-semibold"
+                                        style="background:#27AE60;color:#FFFFFF;" x-text="row.status"></span>
                                 </td>
                                 <td class="px-3 py-2 text-center">
                                     <template x-if="row.is_overdue">
                                         <span class="px-3 py-2 rounded-2xl text-xs font-semibold inline-block"
-                                            style="background:#E74C3C;color:#FFFFFF;"
-                                            x-text="row.overdue_label"></span>
+                                            style="background:#E74C3C;color:#FFFFFF;" x-text="row.overdue_label"></span>
                                     </template>
                                     <template x-if="!row.is_overdue">
                                         <span class="px-3 py-2 rounded-2xl text-xs font-semibold inline-block"
@@ -137,7 +148,8 @@
                                 </td>
                                 <td class="px-3 py-2" x-text="row.duration"></td>
                                 <td class="px-3 py-2">
-                                    <a :href="`/technician/tasks/${row.id}`" class="text-sm font-semibold text-[#1F4E79] underline">View</a>
+                                    <a :href="`/technician/tasks/${row.id}`"
+                                        class="text-sm font-semibold text-[#1F4E79] underline">View</a>
                                 </td>
                             </tr>
                         </template>
@@ -146,8 +158,7 @@
             </div>
 
             <div class="mt-4 flex items-center gap-3 justify-end" x-show="pagination.total > 0">
-                <button class="px-3 py-1 rounded border border-[#D7DDE5] text-sm"
-                    :disabled="pagination.current_page <= 1"
+                <button class="px-3 py-1 rounded border border-[#D7DDE5] text-sm" :disabled="pagination.current_page <= 1"
                     @click="changePage(pagination.current_page - 1)">
                     Prev
                 </button>

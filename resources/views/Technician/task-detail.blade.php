@@ -1,3 +1,4 @@
+<!-- author: Lee Jia Hui -->
 @extends('layouts.app')
 
 @php
@@ -9,8 +10,7 @@
     <section class="space-y-6" x-data="taskDetailPage({{ (int) $jobId }})" x-init="load()">
         {{-- Top card: basic info --}}
         <div class="flex justify-start mb-3">
-            <a href="{{ route('technician.tasks') }}"
-                class="rounded-lg px-4 py-2 font-semibold border text-sm"
+            <a href="{{ route('technician.tasks') }}" class="rounded-lg px-4 py-2 font-semibold border text-sm"
                 style="border-color:#D7DDE5;color:#1F4E79;background:#FFFFFF;">
                 Back to jobs
             </a>
@@ -24,29 +24,29 @@
                     </h1>
                     <p class="text-sm" style="color:#000000;">Technician view and actions.</p>
                 </div>
-            <div class="flex flex-wrap gap-2 text-sm">
-                <span class=" px-3 py-1 rounded-full font-semibold" :style="chipStyle(urgencyChip.bg, urgencyChip.fg)"
-                    x-text="urgencyChip.label"></span>
-                <span class="px-3 py-1 rounded-full font-semibold" :style="chipStyle(statusChip.bg, statusChip.fg)"
-                    x-text="statusChip.label"></span>
-                <span class="px-3 py-1 rounded-full font-semibold"
-                    :style="job.is_overdue ? 'background:#E74C3C;color:#FFFFFF;' : 'background:#27AE60;color:#FFFFFF;'">
-                    <span x-text="job.overdue_label"></span>
-                </span>
-                <template x-if="job.status === 'Completed' && job.completed_at">
-                    <span class="px-3 py-1 rounded-full font-semibold" style="background-color:#27AE60;color:#FFFFFF;">
-                        Completed at: <span x-text="job.completed_at"></span>
+                <div class="flex flex-wrap gap-2 text-sm">
+                    <span class=" px-3 py-1 rounded-full font-semibold" :style="chipStyle(urgencyChip.bg, urgencyChip.fg)"
+                        x-text="urgencyChip.label"></span>
+                    <span class="px-3 py-1 rounded-full font-semibold" :style="chipStyle(statusChip.bg, statusChip.fg)"
+                        x-text="statusChip.label"></span>
+                    <span class="px-3 py-1 rounded-full font-semibold"
+                        :style="job.is_overdue ? 'background:#E74C3C;color:#FFFFFF;' : 'background:#27AE60;color:#FFFFFF;'">
+                        <span x-text="job.overdue_label"></span>
                     </span>
-                </template>
-                <template x-if="job.status !== 'Completed' && job.due_at">
-                    <span class="px-3 py-1 rounded-full font-semibold" style="background-color:#F1C40F;color:#000000;">
-                        Due: <span x-text="job.due_at"></span>
-                    </span>
-                </template>
+                    <template x-if="job.status === 'Completed' && job.completed_at">
+                        <span class="px-3 py-1 rounded-full font-semibold" style="background-color:#27AE60;color:#FFFFFF;">
+                            Completed at: <span x-text="job.completed_at"></span>
+                        </span>
+                    </template>
+                    <template x-if="job.status !== 'Completed' && job.due_at">
+                        <span class="px-3 py-1 rounded-full font-semibold" style="background-color:#F1C40F;color:#000000;">
+                            Due: <span x-text="job.due_at"></span>
+                        </span>
+                    </template>
+                </div>
             </div>
-        </div>
 
-        <div class="grid gap-4 sm:grid-cols-2">
+            <div class="grid gap-4 sm:grid-cols-2">
                 <div class="space-y-2">
                     <div class="text-sm font-semibold" style="color:#000000;">Location</div>
                     <div style="color:#000000;" x-text="job.location || '-'"></div>
@@ -75,8 +75,7 @@
                     <div class="rounded-lg border aspect-video flex items-center justify-center overflow-hidden"
                         style="border-color:#D7DDE5;background:#F5F7FA;">
                         <template x-if="beforePhoto">
-                            <img :src="beforePhoto.url" alt="Before photo"
-                                class="h-full w-full object-cover cursor-zoom-in"
+                            <img :src="beforePhoto.url" alt="Before photo" class="h-full w-full object-cover cursor-zoom-in"
                                 @click="openLightbox([beforePhoto], 0)">
                         </template>
                         <template x-if="!beforePhoto">
@@ -175,8 +174,7 @@
                 <div class="grid sm:grid-cols-2 gap-4">
                     <form method="post" :action="`/technician/tasks/${jobId}/status`" x-data="{ rejectionRequired: false }"
                         @submit="if (!confirm(rejectionRequired ? 'Reject this job?' : 'Update status?')) $event.preventDefault()"
-                        class="rounded-2xl border p-4 space-y-2"
-                        style="border-color:#D7DDE5;background:#F9FBFF;">
+                        class="rounded-2xl border p-4 space-y-2" style="border-color:#D7DDE5;background:#F9FBFF;">
                         @csrf
                         <div class="text-sm font-semibold" style="color:#000000;">Quick status</div>
 
@@ -304,8 +302,8 @@
                     <div class="absolute left-3 bottom-3 px-3 py-1 rounded-md text-xs font-semibold"
                         style="background:rgba(0,0,0,0.65);color:#FFFFFF;">
                         <span x-text="lightboxList[lightboxIndex]?.label
-                                ? ('Uploaded at ' + lightboxList[lightboxIndex].label)
-                                : 'Uploaded at N/A'"></span>
+                                    ? ('Uploaded at ' + lightboxList[lightboxIndex].label)
+                                    : 'Uploaded at N/A'"></span>
                     </div>
                     <template x-if="lightboxList.length > 1">
                         <button type="button"

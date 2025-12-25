@@ -1,5 +1,7 @@
 <?php
 
+// Author: Lee Jia Hui
+
 namespace App\Strategies;
 
 use Illuminate\Support\Collection;

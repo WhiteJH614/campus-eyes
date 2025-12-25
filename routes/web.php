@@ -64,57 +64,66 @@ Route::middleware(['auth', 'role:Admin'])
     ->prefix('admin')
     ->group(function () {
 
-        Route::get('/technicians', 
+        Route::get(
+            '/technicians',
             [App\Http\Controllers\Admin\TechnicianController::class, 'index']
         )->name('admin.technicians.index');
 
-        Route::delete('/technicians/{id}', 
+        Route::delete(
+            '/technicians/{id}',
             [App\Http\Controllers\Admin\TechnicianController::class, 'destroy']
         )->name('admin.technicians.destroy');
-});
+    });
 
 Route::middleware(['auth', 'role:Admin'])
     ->prefix('admin')
     ->group(function () {
 
-        Route::get('/locations', 
+        Route::get(
+            '/locations',
             [App\Http\Controllers\Admin\LocationController::class, 'index']
         )->name('admin.locations.index');
 
-        Route::post('/blocks', 
+        Route::post(
+            '/blocks',
             [App\Http\Controllers\Admin\LocationController::class, 'storeBlock']
         )->name('admin.blocks.store');
 
-        Route::post('/rooms', 
+        Route::post(
+            '/rooms',
             [App\Http\Controllers\Admin\LocationController::class, 'storeRoom']
         )->name('admin.rooms.store');
-});
+    });
 
 Route::middleware(['auth', 'role:Admin'])
     ->prefix('admin')
     ->group(function () {
 
-        Route::get('/rooms/{id}/edit',
+        Route::get(
+            '/rooms/{id}/edit',
             [App\Http\Controllers\Admin\LocationController::class, 'editRoom']
         )->name('admin.rooms.edit');
 
-        Route::put('/rooms/{id}',
+        Route::put(
+            '/rooms/{id}',
             [App\Http\Controllers\Admin\LocationController::class, 'updateRoom']
         )->name('admin.rooms.update');
 
-        Route::delete('/rooms/{id}',
+        Route::delete(
+            '/rooms/{id}',
             [App\Http\Controllers\Admin\LocationController::class, 'deleteRoom']
         )->name('admin.rooms.delete');
-});
+    });
 
 Route::middleware(['auth', 'role:Admin'])
     ->prefix('admin')
     ->group(function () {
 
-        Route::delete('/students/{id}',
+        Route::delete(
+            '/students/{id}',
             [App\Http\Controllers\Admin\UserController::class, 'destroy']
         )->name('admin.students.delete');
-});
+    });
 
 Route::prefix('admin')->middleware('auth')->group(function () {
 
@@ -150,29 +159,28 @@ Route::prefix('admin')->middleware('auth')->group(function () {
 });
 
 Route::prefix('technician')->middleware(['auth', 'technician'])->group(function () {
-    Route::get('/dashboard', [TechnicianController::class, 'dashboard'])->name('technician.dashboard');
-    Route::get('/tasks', [TechnicianController::class, 'tasks'])->name('technician.tasks');
-    Route::get('/tasks/{id}', [TechnicianController::class, 'taskDetail'])->name('technician.task_detail');
+    // Use TechController (the alias) instead of TechnicianController
+    Route::get('/dashboard', [TechController::class, 'dashboard'])->name('technician.dashboard');
+    Route::get('/tasks', [TechController::class, 'tasks'])->name('technician.tasks');
+    Route::get('/tasks/{id}', [TechController::class, 'taskDetail'])->name('technician.task_detail');
     Route::get('/tasks/{id}/complete', function ($id) {
         return redirect()->route('technician.task_detail', $id);
     });
-    Route::get('/profile', [TechnicianController::class, 'profile'])->name('technician.profile');
-    Route::post('/profile', [TechnicianController::class, 'updateProfile'])->name('technician.profile.update');
-    Route::post('/profile/password', [TechnicianController::class, 'updatePassword'])->name('technician.profile.password');
-    Route::get('/completed', [TechnicianController::class, 'completed'])->name('technician.completed');
+    Route::get('/profile', [TechController::class, 'profile'])->name('technician.profile');
+    Route::post('/profile', [TechController::class, 'profileUpdateApi'])->name('technician.profile.update');
+    Route::post('/profile/password', [TechController::class, 'profilePasswordApi'])->name('technician.profile.password');
+    Route::get('/completed', [TechController::class, 'completed'])->name('technician.completed');
 
-    Route::delete('/tasks/{id}/attachments/{attachment}', [TechnicianController::class, 'deleteAfterPhoto'])
+    Route::delete('/tasks/{id}/attachments/{attachment}', [TechController::class, 'deleteAfterPhoto'])
         ->name('technician.delete_after');
 
-    Route::post('/tasks/{id}/proofs', [TechnicianController::class, 'addProofImages'])
+    Route::post('/tasks/{id}/proofs', [TechController::class, 'addProofImages'])
         ->name('technician.add_proof_images');
 
-    Route::post('/tasks/{id}/update-status', [TechnicianController::class, 'updateStatus'])->name('technician.update_status');
-    Route::post('/tasks/{id}/status', [TechnicianController::class, 'updateStatus']);
-    Route::post('/tasks/{id}/complete', [TechnicianController::class, 'completeJob'])->name('technician.complete_job');
+    Route::post('/tasks/{id}/update-status', [TechController::class, 'updateStatus'])->name('technician.update_status');
+    Route::post('/tasks/{id}/status', [TechController::class, 'updateStatus']);
+    Route::post('/tasks/{id}/complete', [TechController::class, 'completeJob'])->name('technician.complete_job');
 });
-
-
 
 Route::middleware(['auth'])->group(function () {
 
@@ -216,4 +224,4 @@ Route::middleware(['auth', 'role:Reporter'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

@@ -1,3 +1,4 @@
+<!-- author: Lee Jia Hui -->
 @extends('layouts.app')
 
 @php
@@ -10,7 +11,8 @@
 
 @section('content')
     <section class="space-y-8" x-data="dashboardPage()" x-init="load()">
-        <div class="rounded-2xl border border-transparent bg-gradient-to-r from-[#102A43] via-[#1F4E79] to-[#2A7ABF] text-white p-6 shadow-lg">
+        <div
+            class="rounded-2xl border border-transparent bg-gradient-to-r from-[#102A43] via-[#1F4E79] to-[#2A7ABF] text-white p-6 shadow-lg">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 class="text-2xl font-semibold">Technician Dashboard</h1>
@@ -54,7 +56,8 @@
                 <div>
                     <div class="font-semibold text-[#7F3C0A] text-lg">Overdue tasks</div>
                     <p class="text-sm text-[#7F3C0A]">
-                        You have <span x-text="overdueCount"></span> overdue task<span x-text="overdueCount === 1 ? '' : 's'"></span>. Focus on these first.
+                        You have <span x-text="overdueCount"></span> overdue task<span
+                            x-text="overdueCount === 1 ? '' : 's'"></span>. Focus on these first.
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-2 text-sm">

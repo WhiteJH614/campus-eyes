@@ -1,10 +1,11 @@
+{{-- Author: Lee Jia Hui --}}
 @extends('layouts.app')
 
 @php
-    $pageTitle = 'Campus Eye - Home';
-    $breadcrumbs = [
-        ['label' => 'Home'],
-    ];
+$pageTitle = 'Campus Eye - Home';
+$breadcrumbs = [
+    ['label' => 'Home'],
+];
 @endphp
 
 @section('content')
