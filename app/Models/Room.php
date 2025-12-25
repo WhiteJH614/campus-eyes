@@ -11,7 +11,7 @@ class Room extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'room_id';
+    protected $primaryKey = 'id';
     public $timestamps = false;
 
     protected $fillable = [
@@ -25,7 +25,7 @@ class Room extends Model
      */
     public function block(): BelongsTo
     {
-        return $this->belongsTo(Block::class, 'block_id');
+        return $this->belongsTo(Block::class, 'block_id', 'id');
     }
 
     /**
@@ -33,6 +33,6 @@ class Room extends Model
      */
     public function reports(): HasMany
     {
-        return $this->hasMany(Report::class, 'room_id');
+        return $this->hasMany(Report::class, 'room_id', 'id');
     }
 }

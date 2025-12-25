@@ -3,15 +3,15 @@
 @section('content')
 <h1>Edit Room</h1>
 
-<form method="POST" action="{{ route('admin.rooms.update', $room->room_id) }}">
+<form method="POST" action="{{ route('admin.rooms.update', $room->id) }}">
     @csrf
     @method('PUT')
 
     <label>Block</label>
     <select name="block_id">
         @foreach($blocks as $block)
-            <option value="{{ $block->block_id }}"
-                {{ $room->block_id == $block->block_id ? 'selected' : '' }}>
+            <option value="{{ $block->id }}"
+                {{ $room->block_id == $block->id ? 'selected' : '' }}>
                 {{ $block->block_name }}
             </option>
         @endforeach

@@ -19,7 +19,7 @@
 
         <select name="block_id">
             @foreach($allBlocks as $block)
-                <option value="{{ $block->block_id }}">
+                <option value="{{ $block->id }}">
                     {{ $block->block_name }}
                 </option>
             @endforeach
@@ -50,14 +50,14 @@
                         {{ $room->room_name }}
 
                         <!-- ✏️ Edit -->
-                        <a href="{{ route('admin.rooms.edit', $room->room_id) }}"
+                        <a href="{{ route('admin.rooms.edit', $room->id) }}"
                            style="margin-left:10px;color:#2563eb;">
                             Edit
                         </a>
 
                         <!-- 🗑️ Delete -->
                         <form method="POST"
-                              action="{{ route('admin.rooms.delete', $room->room_id) }}"
+                              action="{{ route('admin.rooms.delete', $room->id) }}"
                               style="display:inline"
                               onsubmit="return confirm('Delete this room?')">
                             @csrf

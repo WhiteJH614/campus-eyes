@@ -10,7 +10,7 @@ class Block extends Model
 {
     use HasFactory;
 
-    protected $primaryKey = 'block_id';
+    protected $primaryKey = 'id';
     public $timestamps = false;
 
     protected $fillable = [
@@ -22,6 +22,6 @@ class Block extends Model
      */
     public function rooms(): HasMany
     {
-        return $this->hasMany(Room::class, 'block_id');
+        return $this->hasMany(Room::class, 'block_id', 'id');
     }
 }
