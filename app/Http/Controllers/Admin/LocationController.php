@@ -47,38 +47,52 @@ class LocationController extends Controller
         return redirect()->back()->with('success', 'Room added');
     }
 
-public function editRoom($id)
-{
-    $room = Room::findOrFail($id);
-    $blocks = Block::all();
+    public function editRoom($id)
+    {
+        $room = Room::findOrFail($id);
+        $blocks = Block::all();
 
-    return view('admin.locations.edit-room', compact('room', 'blocks'));
-}
+        return view('admin.locations.edit-room', compact('room', 'blocks'));
+    }
 
-public function updateRoom(Request $request, $id)
-{
-    $request->validate([
-        'block_id' => 'required',
-        'floor_number' => 'required|integer',
-        'room_name' => 'required',
-    ]);
+    public function updateRoom(Request $request, $id)
+    {
+        $request->validate([
+            'block_id' => 'required',
+            'floor_number' => 'required|integer',
+            'room_name' => 'required',
+        ]);
 
-    $room = Room::findOrFail($id);
+        $room = Room::findOrFail($id);
 
-    $room->update([
-        'block_id' => $request->block_id,
-        'floor_number' => $request->floor_number,
-        'room_name' => $request->room_name,
-    ]);
+        $room->update([
+            'block_id' => $request->block_id,
+            'floor_number' => $request->floor_number,
+            'room_name' => $request->room_name,
+        ]);
 
-    return redirect()->route('admin.locations.index')
-        ->with('success', 'Room updated');
-}
+        return redirect()->route('admin.locations.index')
+            ->with('success', 'Room updated');
+    }
 
-public function deleteRoom($id)
-{
-    Room::where('room_id', $id)->delete();
+    public function deleteRoom($id)
+    {
+        $room = Room::findOrFail($id);
 
-    return redirect()->back()->with('success', 'Room deleted');
-}
+        // ✅ 检查是否有报告使用这个房间
+        $hasReports = \DB::table('reports')
+            ->where('room_id', $id)
+            ->exists();
+
+        if ($hasReports) {
+            return redirect()->back()
+                ->with('error', 'Cannot delete room. There are reports associated with this room.');
+        }
+
+        $room->delete();
+
+        return redirect()->back()->with('success', 'Room deleted successfully');
+    }
+
+
 }
