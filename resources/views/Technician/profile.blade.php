@@ -68,7 +68,8 @@
                     </div>
                     <span class="text-[11px] px-2 py-1 rounded-full" style="background:#F5F7FA;color:#1F4E79;">Tech</span>
                 </div>
-                <form class="space-y-4" @submit.prevent="saveProfile">
+                <form class="space-y-4" @submit.prevent="saveProfile" method="POST"
+                    action="{{ route('technician.profile.update') }}">
                     <div class="grid sm:grid-cols-2 gap-4">
                         <div class="space-y-2">
                             <label for="name" class="text-sm font-medium text-[#2C3E50]">Full Name</label>
@@ -262,18 +263,40 @@
                 async saveProfile() {
                     this.saveMessage = '';
                     const { email, ...payload } = this.form;
+
+                    console.log('Sending payload:', payload); // See what data we're sending
+
                     const res = await fetch('/api/tech/profile', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=\"csrf-token\"]').content },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
                         credentials: 'same-origin',
                         body: JSON.stringify(payload),
                     });
+
+                    console.log('Response status:', res.status); // See the HTTP status code
+
                     if (res.ok) {
                         this.saveMessage = 'Profile updated.';
                         this.saveMessageClass = 'text-green-600';
                     } else {
                         const err = await res.json().catch(() => ({}));
-                        this.saveMessage = err.message || 'Failed to update profile';
+                        console.log('Error response:', err); // See the full error object
+
+                        // Show detailed error message
+                        let errorMsg = 'Failed to update profile';
+                        if (err.errors) {
+                            // Validation errors (422)
+                            errorMsg = Object.entries(err.errors)
+                                .map(([field, msgs]) => `${field}: ${msgs.join(', ')}`)
+                                .join(' | ');
+                        } else if (err.message) {
+                            errorMsg = err.message;
+                        }
+
+                        this.saveMessage = errorMsg;
                         this.saveMessageClass = 'text-red-600';
                     }
                 },

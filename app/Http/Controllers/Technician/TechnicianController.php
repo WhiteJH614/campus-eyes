@@ -388,13 +388,14 @@ class TechnicianController extends Controller
         if (!$authUser) {
             return response()->json(['status' => 401], 401);
         }
+
         if ($authUser->role !== 'Technician') {
             return response()->json(['status' => 403], 403);
         }
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $authUser->id],
+            'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,' . $authUser->id], // CHANGE required to sometimes
             'phone_number_digits' => ['nullable', 'regex:/^[0-9]{9,11}$/'],
             'campus' => ['nullable', Rule::in(['Penang'])],
             'specialization' => ['nullable', 'array'],
@@ -431,18 +432,21 @@ class TechnicianController extends Controller
         } else {
             $data['phone_number'] = null;
         }
-        unset($data['phone_number_digits']);
 
+        unset($data['phone_number_digits']);
         $specializationValues = $data['specialization'] ?? [];
         $data['specialization'] = $specializationValues ? implode(',', $specializationValues) : null;
+
 
         /** @var \App\Models\User $userModel */
         $userModel = User::findOrFail($authUser->id);
         $userModel->fill($data);
+
         $userModel->save();
 
         return response()->json(['status' => 200, 'message' => 'Profile updated.']);
     }
+
 
     public function profilePasswordApi(Request $request)
     {
