@@ -1,5 +1,5 @@
 <?php
-
+// Author: Tan Jun Yan
 namespace App\Http\Requests;
 
 use App\Models\User;
@@ -16,15 +16,16 @@ class ProfileUpdateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:100'],
             'email' => [
                 'required',
                 'string',
                 'lowercase',
                 'email',
-                'max:255',
+                'max:100',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            'phone_number' => ['nullable', 'string', 'max:20'],
         ];
     }
 }

@@ -1,5 +1,5 @@
 <?php
-
+// Author: Tan Jun Yan
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
@@ -34,7 +34,7 @@ class AuthenticatedSessionController extends Controller
         $target = match ($role) {
             'technician' => route('technician.dashboard'),
             'admin' => '/admin/dashboard',
-            'reporter' => '/dashboard',
+            'reporter' => route('reporter.dashboard'),
             default => route('dashboard', absolute: false),
         };
 

@@ -78,6 +78,15 @@
                 </div>
 
                 <div class="space-y-2">
+                    <label for="email" class="text-sm font-medium" style="color:#2C3E50;">Role</label>
+                    <select id="reporter_role" name="reporter_role" required>
+                        <option value="">{{ __('Select your role...') }}</option>
+                        <option value="Student" {{ old('reporter_role') == 'Student' ? 'selected' : '' }}>{{ __('Student') }}</option>
+                        <option value="Staff" {{ old('reporter_role') == 'Staff' ? 'selected' : '' }}>{{ __('Staff') }}</option>
+                    </select>
+                </div>
+
+                <div class="space-y-2">
                     <label for="password" class="text-sm font-medium" style="color:#2C3E50;">Password</label>
                     <input
                         id="password"

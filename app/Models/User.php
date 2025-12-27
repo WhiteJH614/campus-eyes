@@ -9,31 +9,35 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
+
+    /**
+     * The table associated with the model.
+     */
+    protected $table = 'users';
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $fillable = [
-        'name',                 // Primary display name
+        'name',
         'email',
         'password',
         'phone_number',
-        'role',                 // Reporter / Technician / Admin
+        'role',                 // Admin / Technician / Reporter
         'reporter_role',        // Student / Staff
         'campus',
         'specialization',       // Technician specialization
-        'availability_status',  // Technician availability: Available / Busy / On_Leave
-        'admin_level',          // Admin level, e.g., Supervisor
+        'availability_status',  // Available / Busy / On_Leave
+        'admin_level',          // Admin hierarchy
     ];
 
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $hidden = [
         'password',
@@ -41,9 +45,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
+     * Attribute casting.
      */
     protected function casts(): array
     {
@@ -53,21 +55,79 @@ class User extends Authenticatable
         ];
     }
 
+    /* =======================================================
+     | RELATIONSHIPS
+     |=======================================================*/
+
     /**
-     * Reports created by this user as Reporter.
+     * Reports submitted by this user (Reporter).
      */
     public function reports(): HasMany
     {
-        // users.id -> reports.reporter_id
         return $this->hasMany(Report::class, 'reporter_id');
     }
 
     /**
-     * Reports assigned to this user as Technician.
+     * Reports assigned to this user (Technician).
      */
     public function assignedReports(): HasMany
     {
         return $this->hasMany(Report::class, 'technician_id');
     }
-}
 
+    /* =======================================================
+     | ROLE HELPERS (VERY IMPORTANT FOR CLEAN CONTROLLERS)
+     |=======================================================*/
+
+    /**
+     * Check if user is an Admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'Admin';
+    }
+
+    /**
+     * Check if user is a Technician.
+     */
+    public function isTechnician(): bool
+    {
+        return $this->role === 'Technician';
+    }
+
+    /**
+     * Check if user is a Reporter.
+     */
+    public function isReporter(): bool
+    {
+        return $this->role === 'Reporter';
+    }
+
+    /* =======================================================
+     | QUERY SCOPES (OPTIONAL BUT PROFESSIONAL)
+     |=======================================================*/
+
+    /**
+     * Scope: only technicians.
+     */
+    public function scopeTechnicians($query)
+    {
+        return $query->where('role', 'Technician');
+    }
+
+    /**
+     * Scope: only admins.
+     */
+    public function scopeAdmins($query)
+    {
+        return $query->where('role', 'Admin');
+    }
+
+    /**
+     * Scope: only reporters.
+     */
+    public function scopeReporters($query)
+    {
+        return $query->where('role', 'Reporter');
+    }
+}

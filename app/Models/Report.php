@@ -17,45 +17,61 @@ class Report extends Model
         'room_id',
         'category_id',
         'description',
-        'urgency',          // Low / Medium / High
-        'status',           // Pending / Assigned / In_Progress / Completed
-        'resolution_notes', // 技术员填写的处理说明
+        'urgency',
+        'status',
+        'resolution_notes',
         'due_at',
         'completed_at',
+        'assigned_at',
     ];
 
+    /**
+     * Cast attributes to native types.
+     * This ensures datetime fields are automatically converted to Carbon instances.
+     */
     protected $casts = [
         'due_at' => 'datetime',
         'completed_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'assigned_at' => 'datetime',
     ];
 
+    /**
+     * Reporter who submitted the report.
+     */
     public function reporter(): BelongsTo
     {
-        // users.id -> reports.reporter_id
         return $this->belongsTo(User::class, 'reporter_id');
     }
 
+    /**
+     * Technician assigned to the report.
+     */
     public function technician(): BelongsTo
     {
-        // users.id -> reports.technician_id
         return $this->belongsTo(User::class, 'technician_id');
     }
 
+    /**
+     * Room where the issue is reported.
+     */
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class, 'room_id', 'id');
+    }
+
+    /**
+     * Category of the report.
+     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
     }
 
-    public function room(): BelongsTo
-    {
-        return $this->belongsTo(Room::class);
-    }
-
+    /**
+     * Attachments related to the report.
+     */
     public function attachments(): HasMany
     {
-        return $this->hasMany(Attachment::class, 'report_id');
+        return $this->hasMany(Attachment::class);
     }
-    
 }

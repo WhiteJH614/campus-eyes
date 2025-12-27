@@ -9,19 +9,24 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Attachment extends Model
 {
     use HasFactory;
+
     public $timestamps = false;
+
     protected $fillable = [
         'report_id',
         'file_name',
         'file_path',
         'file_type',
-        'attachment_type', // REPORTER_PROOF / TECHNICIAN_PROOF
+        'attachment_type',
     ];
 
     protected $casts = [
         'uploaded_at' => 'datetime',
     ];
 
+    /**
+     * Report this attachment belongs to.
+     */
     public function report(): BelongsTo
     {
         return $this->belongsTo(Report::class);

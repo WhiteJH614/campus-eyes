@@ -1,5 +1,7 @@
 <?php
 
+// Author: Lee Jia Hui
+
 namespace App\Http\Controllers\Technician;
 
 use App\Http\Controllers\Controller;
@@ -104,15 +106,19 @@ class TechnicianController extends Controller
             ->whereBetween('completed_at', [$startOfMonth, $endOfMonth])
             ->count();
 
+        // Fixed: Only count as overdue if due_at is NOT NULL and has passed
         $overdueCount = Report::where('technician_id', $technicianId)
             ->where('status', '!=', 'Completed')
-            ->whereRaw('COALESCE(due_at, created_at) < ?', [$now])
+            ->whereNotNull('due_at')
+            ->where('due_at', '<', $now)
             ->count();
 
+        // Fixed: Only get overdue reports with actual due dates
         $nextOverdue = Report::where('technician_id', $technicianId)
             ->where('status', '!=', 'Completed')
-            ->whereRaw('COALESCE(due_at, created_at) < ?', [$now])
-            ->orderByRaw('COALESCE(due_at, created_at)')
+            ->whereNotNull('due_at')
+            ->where('due_at', '<', $now)
+            ->orderBy('due_at')
             ->first();
 
         $recent = Report::where('technician_id', $technicianId)
@@ -147,6 +153,7 @@ class TechnicianController extends Controller
         ];
     }
 
+
     public function tasksApi(Request $request)
     {
         $user = Auth::user();
@@ -161,9 +168,9 @@ class TechnicianController extends Controller
 
         $now = Carbon::now('Asia/Kuala_Lumpur');
 
-        $query = Report::with(['room.block.campus', 'category'])
+        $query = Report::with(['room.block', 'category'])
             ->where('technician_id', $user->id)
-            ->whereIn('status', ['Pending', 'Assigned', 'In_Progress']);
+            ->whereIn('status', ['Assigned', 'In_Progress']);
 
         if ($request->filled('q')) {
             $query->where('id', 'like', '%' . trim($request->q) . '%');
@@ -199,24 +206,33 @@ class TechnicianController extends Controller
 
         $jobs = $paginator->map(function (Report $job) use ($now) {
             $due = $job->due_at;
-            $isOverdue = ($job->status === 'Overdue') || ($due && $due->lt($now) && $job->status !== 'Completed');
-            $overdueHuman = $isOverdue && $due ? $due->diffForHumans($now, true) : null;
+            // Fixed: Check if task has due date AND is past due
+            $isOverdue = $due && $due->lt($now) && $job->status !== 'Completed';
+
             $location = trim(collect([
-                optional(optional($job->room)->block)->campus->campus_name ?? '',
                 optional($job->room->block ?? null)->block_name ?? '',
                 optional($job->room)->room_name ?? '',
             ])->filter()->implode(', '));
+
+            $blockName = optional($job->room->block ?? null)->block_name ?? '-';
+            $roomName = optional($job->room)->room_name ?? '-';
+
+            // Fixed: Return "Overdue" as status when task is overdue
+            $displayStatus = $isOverdue ? 'Overdue' : ($job->status ?? '-');
+            $overdueHuman = $isOverdue ? $due->diffForHumans($now) : null;
 
             return [
                 'id' => $job->id,
                 'reported_at' => optional($job->created_at)?->format('d M Y H:i') ?? '-',
                 'location' => $location,
+                'block_name' => $blockName,
+                'room_name' => $roomName,
                 'category' => optional($job->category)->name ?? '-',
                 'urgency' => $job->urgency ?? '-',
-                'status' => $job->status ?? '-',
-                'due_at' => $job->due_at?->format('d M Y H:i') ?? '-',
+                'status' => $displayStatus,  // Shows "Overdue" if past due
+                'due_at' => $job->due_at?->format('d M Y H:i') ?? 'No due date',
                 'is_overdue' => $isOverdue,
-                'overdue_human' => $overdueHuman,
+                'overdue_human' => $overdueHuman,  // e.g., "2 days ago"
             ];
         });
 
@@ -232,6 +248,7 @@ class TechnicianController extends Controller
             ],
         ]);
     }
+
 
     public function completedApi(Request $request)
     {
@@ -371,13 +388,14 @@ class TechnicianController extends Controller
         if (!$authUser) {
             return response()->json(['status' => 401], 401);
         }
+
         if ($authUser->role !== 'Technician') {
             return response()->json(['status' => 403], 403);
         }
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $authUser->id],
+            'email' => ['sometimes', 'email', 'max:255', 'unique:users,email,' . $authUser->id], // CHANGE required to sometimes
             'phone_number_digits' => ['nullable', 'regex:/^[0-9]{9,11}$/'],
             'campus' => ['nullable', Rule::in(['Penang'])],
             'specialization' => ['nullable', 'array'],
@@ -414,18 +432,21 @@ class TechnicianController extends Controller
         } else {
             $data['phone_number'] = null;
         }
-        unset($data['phone_number_digits']);
 
+        unset($data['phone_number_digits']);
         $specializationValues = $data['specialization'] ?? [];
         $data['specialization'] = $specializationValues ? implode(',', $specializationValues) : null;
+
 
         /** @var \App\Models\User $userModel */
         $userModel = User::findOrFail($authUser->id);
         $userModel->fill($data);
+
         $userModel->save();
 
         return response()->json(['status' => 200, 'message' => 'Profile updated.']);
     }
+
 
     public function profilePasswordApi(Request $request)
     {
@@ -611,11 +632,11 @@ class TechnicianController extends Controller
             return response()->json(['status' => 403, 'message' => 'Forbidden (Technician only)', 'data' => null], 403);
         }
 
-        $job = Report::with(['room.block.campus', 'category', 'attachments'])
+        $job = Report::with(['room.block', 'category', 'attachments'])
             ->where('technician_id', $user->id)
             ->findOrFail($id);
 
-        $before = optional($job->attachments->firstWhere('attachment_type', 'REPORTER_PROOF'))->file_path;
+        $beforeAttachment = $job->attachments->firstWhere('attachment_type', 'REPORTER_PROOF');
         $afterAttachments = $job->attachments
             ->where('attachment_type', 'TECHNICIAN_PROOF')
             ->map(fn($a) => [
@@ -643,7 +664,12 @@ class TechnicianController extends Controller
                 ],
                 'category' => optional($job->category)->name,
                 'attachments' => [
-                    'reporter_proof' => $before ? asset('storage/' . $before) : null,
+                    'reporter_proof' => $beforeAttachment
+                        ? [
+                            'url' => asset('storage/' . $beforeAttachment->file_path),
+                            'uploaded_at' => $beforeAttachment->uploaded_at,
+                        ]
+                        : null,
                     'technician_proofs' => $afterAttachments,
                 ],
             ],

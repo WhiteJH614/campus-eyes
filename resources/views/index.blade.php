@@ -1,10 +1,11 @@
+{{-- Author: Lee Jia Hui --}}
 @extends('layouts.app')
 
 @php
-    $pageTitle = 'Campus Eye - Home';
-    $breadcrumbs = [
-        ['label' => 'Home'],
-    ];
+$pageTitle = 'Campus Eye - Home';
+$breadcrumbs = [
+    ['label' => 'Home'],
+];
 @endphp
 
 @section('content')
@@ -36,7 +37,7 @@
                             style="background:#FFFFFF;color:#1F4E79;">
                             Create a report
                         </a>
-                        <a href="/reports/mine"
+                        <a href="/reports"
                             class="inline-flex items-center gap-2 px-4 py-2.5 font-medium text-sm rounded-lg border focus:outline-none focus-visible:ring-2"
                             style="background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.3);color:#FFFFFF;">
                             View my reports
@@ -81,7 +82,7 @@
                 <p class="text-sm mt-2" style="color:#7F8C8D;">
                     Follow technician updates, attachments, and resolution history.
                 </p>
-                <a href="/reports/mine" class="inline-flex items-center gap-1 text-sm font-medium mt-3"
+                <a href="/reports" class="inline-flex items-center gap-1 text-sm font-medium mt-3"
                     style="color:#1F4E79;">View my reports -></a>
             </div>
             <div class="rounded-xl border p-5 shadow-sm hover:shadow-md transition"

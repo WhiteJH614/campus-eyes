@@ -15,6 +15,9 @@ class Category extends Model
         'description',
     ];
 
+    /**
+     * Reports under this category.
+     */
     public function reports(): HasMany
     {
         return $this->hasMany(Report::class);
