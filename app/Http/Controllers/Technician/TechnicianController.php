@@ -232,7 +232,7 @@ class TechnicianController extends Controller
                 'status' => $displayStatus,  // Shows "Overdue" if past due
                 'due_at' => $job->due_at?->format('d M Y H:i') ?? 'No due date',
                 'is_overdue' => $isOverdue,
-                'overdue_human' => $overdueHuman,  // e.g., "2 days ago"
+                'overdue' => $overdueHuman,  // e.g., "2 days ago"
             ];
         });
 
